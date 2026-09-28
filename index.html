@@ -28,7 +28,26 @@
         }
         .arcade-cabinet {
             animation: pulse-glow 4s infinite ease-in-out;
+            --chrome: 200px; /* header + footer + paddings, subtracted from viewport height */
+            width: min(100%, calc((100dvh - var(--chrome)) * 16 / 9));
+            min-width: min(100%, 320px);
         }
+        .touch-only { display: none; }
+        .dpad-grid { width: 9.5rem; height: 9.5rem; }
+        @media (pointer: coarse) {
+            .touch-only { display: flex; }
+            .arcade-cabinet { --chrome: 400px; animation: none; box-shadow: 0 0 25px rgba(234,179,8,.4); }
+        }
+        /* Phone in landscape: hide chrome, float D-pad over the sides */
+        @media (pointer: coarse) and (max-height: 500px) {
+            header, footer { display: none !important; }
+            main { padding: 4px !important; }
+            .arcade-cabinet { --chrome: 44px; }
+            .touch-only { position: fixed; left: max(8px, env(safe-area-inset-left)); bottom: 8px; z-index: 40; background: transparent; border: 0; padding: 0; opacity: .75; }
+            .touch-only .hint { display: none; }
+            .dpad-grid { width: 7.5rem; height: 7.5rem; }
+        }
+        @media (min-width: 1024px) { .hud { font-size: 14px !important; } }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 h-full flex flex-col justify-between font-sans select-none overflow-x-hidden">
@@ -53,11 +72,11 @@
         </div>
     </header>
 
-    <main class="flex-grow flex flex-col items-center justify-center p-2 md:p-4 max-w-4xl mx-auto w-full min-h-0">
-        <div class="w-full bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl relative flex flex-col arcade-cabinet">
+    <main class="flex-grow flex flex-col items-center justify-center p-2 md:p-4 max-w-6xl mx-auto w-full min-h-0" style="padding-bottom:max(0.5rem, env(safe-area-inset-bottom))">
+        <div class="bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl relative flex flex-col arcade-cabinet">
 
             <!-- HUD Bar -->
-            <div class="bg-slate-950 px-2 sm:px-4 py-2 sm:py-2.5 border-b border-slate-800 flex justify-between items-center text-[9px] sm:text-xs font-arcade">
+            <div class="bg-slate-950 px-2 sm:px-4 py-2 sm:py-2.5 border-b border-slate-800 flex justify-between items-center text-[9px] sm:text-xs font-arcade hud">
                 <div class="text-emerald-400">$<span id="scoreVal">0</span>/<span id="targetVal" class="text-amber-400">2500</span></div>
                 <div class="text-blue-400">PISO <span id="levelVal">1</span>/5</div>
                 <div class="text-red-400"><span id="livesVal">❤️❤️❤️</span></div>
@@ -69,13 +88,13 @@
 
                 <!-- Start Overlay Modal -->
                 <div id="startScreen" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-20 overflow-y-auto">
-                    <div class="text-3xl sm:text-4xl mb-2 sm:mb-3 animate-bounce">👔 💰 ☕</div>
+                    <div class="text-2xl sm:text-4xl mb-1 sm:mb-3 animate-bounce">👔 💰 ☕</div>
                     <h2 class="font-arcade text-base sm:text-lg md:text-xl text-yellow-400 mb-2">LA CARRERA CORPORATIVA</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-300 max-w-md mb-4 sm:mb-5 leading-relaxed">
+                    <p class="text-[11px] sm:text-xs text-slate-300 max-w-md mb-4 sm:mb-5 leading-relaxed max-[480px]:hidden">
                         Recolecta sobres de pago <span class="text-emerald-400 font-bold">($)</span> y café <span class="text-amber-500 font-bold">(☕)</span>, esquiva la burocracia <span class="text-red-400 font-bold">(📑)</span>.
                         Cada piso exige un <span class="text-amber-400 font-bold">mínimo de ingresos</span> para pasar al siguiente nivel y llegar a tus <span class="text-yellow-400 font-bold">Vacaciones en la Playa</span>.
                     </p>
-                    <div class="bg-slate-900 border border-slate-700 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-[11px] text-slate-400 mb-4 sm:mb-6 space-y-1 shadow-inner">
+                    <div class="bg-slate-900 border border-slate-700 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-[11px] text-slate-400 mb-3 sm:mb-6 space-y-1 shadow-inner max-[480px]:hidden">
                         <p>💻 <b>PC:</b> Flechas / WASD para moverte</p>
                         <p>📱 <b>Móvil:</b> Botones virtuales o desliza el dedo sobre el juego</p>
                     </div>
@@ -128,8 +147,8 @@
             </div>
 
             <!-- Virtual D-Pad for Mobile -->
-            <div class="bg-slate-950 p-3 border-t border-slate-800 flex justify-between items-center md:hidden">
-                <div class="grid grid-cols-3 grid-rows-3 gap-1.5 w-36 h-36">
+            <div class="touch-only bg-slate-950 p-3 border-t border-slate-800 justify-between items-center">
+                <div class="dpad-grid grid grid-cols-3 grid-rows-3 gap-1.5">
                     <div></div>
                     <button data-dir="UP" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">⬆️</button>
                     <div></div>
@@ -140,7 +159,7 @@
                     <button data-dir="DOWN" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">⬇️</button>
                     <div></div>
                 </div>
-                <div class="text-right text-[10px] text-slate-400 space-y-1 pr-2">
+                <div class="hint text-right text-[10px] text-slate-400 space-y-1 pr-2">
                     <p class="text-yellow-400 font-bold">CONTROLES TÁCTILES</p>
                     <p>Mantén presionado</p>
                     <p>o desliza el dedo</p>
