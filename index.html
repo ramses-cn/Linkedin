@@ -32,6 +32,7 @@
             width: min(100%, calc((100dvh - var(--chrome)) * 16 / 9));
             min-width: min(100%, 320px);
         }
+        .portrait .arcade-cabinet { width: 100%; }
         .touch-only { display: none; }
         .dpad-grid { width: 9.5rem; height: 9.5rem; }
         @media (pointer: coarse) {
@@ -83,7 +84,7 @@
             </div>
 
             <!-- Canvas Container (fixed 16:9 to match internal resolution, no distortion) -->
-            <div class="relative w-full aspect-[16/9] bg-slate-900 overflow-hidden">
+            <div id="stage" class="relative w-full bg-slate-900 overflow-hidden" style="aspect-ratio:16/9">
                 <canvas id="gameCanvas" class="w-full h-full block"></canvas>
 
                 <!-- Start Overlay Modal -->
@@ -177,10 +178,39 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        const V_WIDTH = 800;
-        const V_HEIGHT = 450;
+        let V_WIDTH = 800;
+        let V_HEIGHT = 450;
         canvas.width = V_WIDTH;
         canvas.height = V_HEIGHT;
+
+        // Adapt the play area: wide (800x450) on desktop/landscape, tall on portrait phones
+        let lastLayoutW = 0;
+        function applyLayout() {
+            const portrait = window.innerHeight > window.innerWidth && window.innerWidth < 700;
+            document.documentElement.classList.toggle('portrait', portrait);
+            if (portrait) {
+                const cabW = Math.min(window.innerWidth - 16, 700);
+                const h = id => { const el = document.querySelector(id); return el && el.offsetParent !== null ? el.offsetHeight : 0; };
+                const used = h('header') + h('.hud') + h('.touch-only') + 40;
+                const availH = Math.max(window.innerHeight - used, cabW * 0.9);
+                V_WIDTH = 500;
+                V_HEIGHT = Math.max(400, Math.min(760, Math.round(500 * availH / cabW)));
+            } else {
+                V_WIDTH = 800;
+                V_HEIGHT = 450;
+            }
+            canvas.width = V_WIDTH;
+            canvas.height = V_HEIGHT;
+            document.getElementById('stage').style.aspectRatio = V_WIDTH + '/' + V_HEIGHT;
+            document.querySelector('.arcade-cabinet').style.setProperty('--ar', V_WIDTH / V_HEIGHT);
+            player.x = Math.min(player.x, V_WIDTH - player.width - 15);
+            player.y = Math.min(player.y, V_HEIGHT - player.height - 15);
+            lastLayoutW = window.innerWidth;
+        }
+        window.addEventListener('resize', () => {
+            if (window.innerWidth !== lastLayoutW) { applyLayout(); if (gameState !== 'PLAYING') draw(); }
+        });
+        window.addEventListener('orientationchange', () => setTimeout(() => { applyLayout(); if (gameState !== 'PLAYING') draw(); }, 250));
 
         let highScore = localStorage.getItem('arcade_highscore') || 0;
         document.getElementById('highScoreVal').innerText = highScore;
@@ -394,6 +424,7 @@
         }
 
         function resetLevel() {
+            applyLayout();
             player.x = 80;
             player.y = V_HEIGHT / 2 - player.height / 2;
             paychecks = [];
@@ -701,25 +732,31 @@
             ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
 
             if (gameState === 'VACATION') {
-                let skyGrad = ctx.createLinearGradient(0, 0, 0, V_HEIGHT);
+                const S = V_WIDTH / 800;
+                ctx.fillStyle = '#0284c7';
+                ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+                ctx.save();
+                ctx.translate(0, V_HEIGHT - 450 * S);
+                ctx.scale(S, S);
+                let skyGrad = ctx.createLinearGradient(0, 0, 0, 450);
                 skyGrad.addColorStop(0, '#0284c7');
                 skyGrad.addColorStop(0.5, '#38bdf8');
                 skyGrad.addColorStop(0.8, '#fed7aa');
                 ctx.fillStyle = skyGrad;
-                ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+                ctx.fillRect(0, 0, 800, 450);
 
                 ctx.fillStyle = '#facc15';
                 ctx.beginPath();
-                ctx.arc(V_WIDTH - 140, 80, 50, 0, Math.PI * 2);
+                ctx.arc(800 - 140, 80, 50, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.fillStyle = '#0369a1';
-                ctx.fillRect(0, V_HEIGHT * 0.55, V_WIDTH, V_HEIGHT * 0.45);
+                ctx.fillRect(0, 450 * 0.55, 800, 450 * 0.45);
                 ctx.fillStyle = '#0ea5e9';
-                ctx.fillRect(0, V_HEIGHT * 0.55, V_WIDTH, 14);
+                ctx.fillRect(0, 450 * 0.55, 800, 14);
 
                 ctx.fillStyle = '#fef08a';
-                ctx.fillRect(0, V_HEIGHT * 0.74, V_WIDTH, V_HEIGHT * 0.26);
+                ctx.fillRect(0, 450 * 0.74, 800, 450 * 0.26);
 
                 ctx.fillStyle = '#78350f';
                 ctx.fillRect(110, 190, 14, 140);
@@ -761,6 +798,7 @@
                 ctx.fillStyle = '#facc15';
                 ctx.fillText('¡MISIÓN CUMPLIDA!', 190, 50);
 
+                ctx.restore();
                 return;
             }
 
@@ -778,7 +816,7 @@
 
             ctx.font = 'bold 11px "Press Start 2P", monospace';
             ctx.fillStyle = '#94a3b8';
-            ctx.fillText(floorNames[level-1].toUpperCase(), 20, 28);
+            ctx.fillText(floorNames[level-1].split(' (')[0].toUpperCase(), 20, 28);
 
             paychecks.forEach(p => {
                 ctx.font = '26px sans-serif';
@@ -857,6 +895,7 @@
             }
         }
 
+        applyLayout();
         draw();
     </script>
 
