@@ -405,18 +405,38 @@
       box-shadow: 0 1px 0 #14532d;
     }
 
-    .code-area {
-      width: 100%;
-      height: 130px;
-      background: #090d16;
-      color: #38bdf8;
+    .controls-guide {
+      background: #0f172a;
       border: 1px solid #334155;
-      border-radius: 6px;
-      padding: 8px;
-      font-family: monospace;
-      font-size: 11px;
-      resize: none;
-      margin-bottom: 10px;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      text-align: left;
+    }
+    .controls-guide-title {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 7px;
+    }
+    .ctrl-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      font-size: 11.5px;
+      color: #cbd5e1;
+    }
+    .ctrl-item kbd {
+      display: inline-block;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #f8fafc;
     }
 
     /* Adaptación multi-dispositivo: móviles pequeños, tablet y horizontal corto */
@@ -428,10 +448,10 @@
       .level-selector::-webkit-scrollbar { display: none; }
       .btn-lvl { white-space: nowrap; padding: 3px 6px; font-size: 10.5px; }
       .top-actions { width: 100%; justify-content: flex-end; }
-      #btn-debug, #btn-sim-mobile, #btn-sites { display: none; }
     }
 
     @media (max-width: 430px) {
+      .ctrl-grid { grid-template-columns: 1fr; gap: 5px; font-size: 11px; }
       .touch-cluster { gap: 6px; }
       .touch-btn { width: 50px; height: 50px; font-size: 15px; }
       .touch-btn.btn-dash { width: 48px; height: 48px; }
@@ -441,10 +461,12 @@
 
     @media (max-height: 480px) {
       #top-bar { min-height: 36px; padding: 2px 8px; }
-      #btn-debug, #btn-sim-mobile, #btn-sites { display: none; }
-      .modal-card { padding: 12px 14px; }
-      .modal-card h2 { font-size: 16px; margin-bottom: 4px; }
-      .modal-card p { font-size: 11.5px; margin-bottom: 8px; }
+      .modal-card { padding: 10px 14px; }
+      .modal-card h2 { font-size: 15px; margin-bottom: 4px; }
+      .modal-card p { font-size: 11px; margin-bottom: 6px; }
+      .controls-guide { padding: 6px 10px; margin-bottom: 8px; }
+      .controls-guide-title { font-size: 9px; margin-bottom: 4px; }
+      .ctrl-grid { gap: 4px 10px; font-size: 10.5px; }
       .stats-grid { padding: 6px 10px; margin-bottom: 8px; font-size: 11px; }
       .btn-primary { padding: 8px 14px; font-size: 12px; }
       .touch-btn { width: 48px; height: 48px; font-size: 14px; }
@@ -461,7 +483,7 @@
     <div class="brand-group">
       <a href="../../index.html" class="btn-top" style="text-decoration:none;" title="Volver a la portada">← Portada</a>
       <div class="brand-title">
-        🦖 DINOCORP <span class="badge-deluxe">v4.2 DELUXE</span>
+        🦖 DINOCORP
       </div>
       <div class="level-selector" id="level-tabs">
         <button class="btn-lvl active" data-lvl="0">1-1 Oficina</button>
@@ -472,11 +494,8 @@
     </div>
 
     <div class="top-actions">
-      <button class="btn-top" id="btn-debug" title="Ver Hitboxes, Vectores, Coyote Time y FPS">🛠️ Hitboxes</button>
-      <button class="btn-top" id="btn-sim-mobile" title="Alternar marco de teléfono móvil (390px) o pantalla completa">📱 Vista Móvil</button>
       <button class="btn-top active-mode" id="btn-music" title="Activar/Silenciar Música 8-Bits">🎵 Música</button>
       <button class="btn-top active-mode" id="btn-mute" title="Activar/Silenciar Efectos de Sonido">🔊 SFX</button>
-      <button class="btn-top" id="btn-sites" title="Obtener código HTML para incrustar en Google Sites">🌐 Google Sites</button>
       <button class="btn-top" id="btn-pause" title="Pausar y ver Récords (Tecla P)">⏸ Pausa</button>
     </div>
   </header>
@@ -487,27 +506,15 @@
       <div id="stage-container">
         <canvas id="gameCanvas" width="800" height="450" tabindex="0"></canvas>
 
-        <!-- Modal de Juego (Pausa / Nivel Superado / Victoria / Récords) -->
+        <!-- Modal de Juego (Inicio / Pausa / Nivel Superado / Victoria / Récords) -->
         <div class="overlay-modal" id="overlay-modal">
           <div class="modal-card">
             <h2 id="modal-title">ESTADO DE JORNADA</h2>
             <p id="modal-desc"></p>
+            <div class="controls-guide" id="modal-controls" style="display:none;"></div>
             <div class="stats-grid" id="modal-stats"></div>
             <button class="btn-primary" id="btn-modal-share" style="display:none; background:#0284c7; color:#fff; box-shadow:0 3px 0 #075985; margin-bottom:8px;">📸 Descargar Tarjeta LinkedIn</button>
             <button class="btn-primary" id="btn-modal-action">CONTINUAR</button>
-          </div>
-        </div>
-
-        <!-- Modal de Exportación para Google Sites -->
-        <div class="overlay-modal" id="sites-modal">
-          <div class="modal-card">
-            <h2>🌐 Incrustar en Google Sites</h2>
-            <p>Copia este código HTML autocontenido y pégalo en <b>Google Sites &rarr; Insertar &rarr; Incorporar &rarr; Código Incorporado</b>:</p>
-            <textarea class="code-area" id="sites-code-box" readonly></textarea>
-            <div style="display:flex; gap:8px;">
-              <button class="btn-primary" id="btn-copy-sites" style="background:#fbbf24; box-shadow: 0 3px 0 #b45309;">📋 Copiar Código</button>
-              <button class="btn-primary" id="btn-close-sites" style="background:#475569; color:#fff; box-shadow: 0 3px 0 #1e293b;">Cerrar</button>
-            </div>
           </div>
         </div>
       </div>
@@ -2652,9 +2659,22 @@
   const overlayModal = document.getElementById('overlay-modal');
   const modalTitle = document.getElementById('modal-title');
   const modalDesc = document.getElementById('modal-desc');
+  const modalControls = document.getElementById('modal-controls');
   const modalStats = document.getElementById('modal-stats');
   const btnModalShare = document.getElementById('btn-modal-share');
   const btnModalAction = document.getElementById('btn-modal-action');
+
+  const DINO_CONTROLS_HTML = `
+    <div class="controls-guide-title">Comandos del Juego</div>
+    <div class="ctrl-grid">
+      <div class="ctrl-item"><kbd>⬅️ ➡️</kbd> / <kbd>A D</kbd> Moverse</div>
+      <div class="ctrl-item"><kbd>Espacio</kbd> / <kbd>⬆️ W</kbd> Saltar</div>
+      <div class="ctrl-item"><kbd>X</kbd> / <kbd>Shift</kbd> Sello (con Café)</div>
+      <div class="ctrl-item"><kbd>C</kbd> / <kbd>Z</kbd> Dash Ejecutivo ⚡</div>
+      <div class="ctrl-item"><kbd>P</kbd> Pausar</div>
+      <div class="ctrl-item">📱 Móvil / 🎮 Mando táctil</div>
+    </div>
+  `;
 
   function generateDinoShareCard() {
     const sc = document.createElement('canvas');
@@ -2704,24 +2724,34 @@
   btnModalShare.addEventListener('click', generateDinoShareCard);
 
   let modalIsPause = false;
-  let prevStateBeforeSites = 'PLAYING';
 
-  function showModal(title, desc, btnText, callback, showShare = false, isPause = false) {
+  function showModal(title, desc, btnText, callback, showShare = false, isPause = false, showControls = false, hideStats = false) {
     clearInputs();
     saveRecords(score, currentLevelIdx, foldersCollectedInLevel);
     gameState = 'PAUSED';
     modalIsPause = isPause;
     modalTitle.textContent = title;
     modalDesc.textContent = desc;
-    const medalsStr = [0, 1, 2, 3].map(i => `${LEVELS[i].id}:${saveData.medalsPerLevel[i] || '—'}`).join(' · ');
-    modalStats.innerHTML = `
-      <div class="stats-row"><span>Nivel Actual:</span><span>${LEVELS[currentLevelIdx].id} - ${LEVELS[currentLevelIdx].name}</span></div>
-      <div class="stats-row"><span>Medallas por Sector:</span><span>${medalsStr}</span></div>
-      <div class="stats-row"><span>Carpetas Confidenciales (Nivel / Total):</span><span>📁 ${foldersCollectedInLevel}/3 (Total: ${getTotalSavedFolders()}/12)</span></div>
-      <div class="stats-row"><span>Refrigerio Respetado (1:00 PM):</span><span>${lunchBonusAwarded ? '✅ Sí (+$500)' : 'En curso'}</span></div>
-      <div class="stats-row"><span>Récord Histórico (High Score):</span><span>🏆 $${saveData.highScore.toLocaleString('en-US')}</span></div>
-      <div class="stats-row"><span>Puntaje de Jornada Actual:</span><span>💰 $${score.toLocaleString('en-US')}</span></div>
-    `;
+    if (showControls) {
+      modalControls.innerHTML = DINO_CONTROLS_HTML;
+      modalControls.style.display = 'block';
+    } else {
+      modalControls.style.display = 'none';
+    }
+    if (hideStats) {
+      modalStats.style.display = 'none';
+    } else {
+      const medalsStr = [0, 1, 2, 3].map(i => `${LEVELS[i].id}:${saveData.medalsPerLevel[i] || '—'}`).join(' · ');
+      modalStats.innerHTML = `
+        <div class="stats-row"><span>Nivel Actual:</span><span>${LEVELS[currentLevelIdx].id} - ${LEVELS[currentLevelIdx].name}</span></div>
+        <div class="stats-row"><span>Medallas por Sector:</span><span>${medalsStr}</span></div>
+        <div class="stats-row"><span>Carpetas Confidenciales (Nivel / Total):</span><span>📁 ${foldersCollectedInLevel}/3 (Total: ${getTotalSavedFolders()}/12)</span></div>
+        <div class="stats-row"><span>Refrigerio Respetado (1:00 PM):</span><span>${lunchBonusAwarded ? '✅ Sí (+$500)' : 'En curso'}</span></div>
+        <div class="stats-row"><span>Récord Histórico (High Score):</span><span>🏆 $${saveData.highScore.toLocaleString('en-US')}</span></div>
+        <div class="stats-row"><span>Puntaje de Jornada Actual:</span><span>💰 $${score.toLocaleString('en-US')}</span></div>
+      `;
+      modalStats.style.display = 'block';
+    }
     btnModalShare.style.display = showShare ? 'block' : 'none';
     btnModalAction.textContent = btnText;
     btnModalAction.onclick = () => {
@@ -2738,12 +2768,14 @@
     if (gameState === 'ENDING' || gameState === 'VICTORY' || gameState === 'WARPING') return;
     if (gameState === 'PLAYING') {
       showModal(
-        '☕ JORNADA EN PAUSA (v4.2 DELUXE)',
-        'Controles: Flechas/WASD para moverte, Espacio para Salto (con Coyote Time), X/Shift para Sello, y C/Z para Dash Ejecutivo (⚡). Compatible con mandos USB/Bluetooth.',
+        '☕ JORNADA EN PAUSA',
+        'Tómate un respiro antes de seguir rumbo a las 6:00 PM.',
         'CONTINUAR JORNADA',
         null,
         false,
-        true
+        true,
+        true,
+        false
       );
     } else if (gameState === 'PAUSED' && modalIsPause) {
       modalIsPause = false;
@@ -2754,18 +2786,6 @@
   }
 
   // Botones de la Barra Superior
-  document.getElementById('btn-debug').addEventListener('click', (e) => {
-    debugMode = !debugMode;
-    e.currentTarget.classList.toggle('active-mode', debugMode);
-  });
-
-  document.getElementById('btn-sim-mobile').addEventListener('click', (e) => {
-    const ws = document.getElementById('app-workspace');
-    ws.classList.toggle('simulated-mobile-frame');
-    e.currentTarget.classList.toggle('active-mode', ws.classList.contains('simulated-mobile-frame'));
-    setTimeout(fitCanvas, 50);
-  });
-
   document.getElementById('btn-music').addEventListener('click', (e) => {
     initAudio();
     musicEnabled = !musicEnabled;
@@ -2784,40 +2804,6 @@
 
   document.getElementById('btn-pause').addEventListener('click', togglePause);
 
-  // Exportador a Google Sites
-  const sitesModal = document.getElementById('sites-modal');
-  const sitesCodeBox = document.getElementById('sites-code-box');
-  document.getElementById('btn-sites').addEventListener('click', () => {
-    clearInputs();
-    prevStateBeforeSites = gameState;
-    gameState = 'PAUSED';
-    sitesCodeBox.value = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-    sitesModal.classList.add('visible');
-  });
-  document.getElementById('btn-copy-sites').addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    let copied = false;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(sitesCodeBox.value);
-        copied = true;
-      }
-    } catch (err) {}
-    if (!copied) {
-      try {
-        sitesCodeBox.select();
-        copied = document.execCommand('copy');
-      } catch (err) {}
-    }
-    btn.textContent = copied ? '✅ ¡Código Copiado!' : '⚠️ Selecciona y Ctrl+C';
-    setTimeout(() => { btn.textContent = '📋 Copiar Código'; }, 2000);
-  });
-  document.getElementById('btn-close-sites').addEventListener('click', () => {
-    sitesModal.classList.remove('visible');
-    gameState = overlayModal.classList.contains('visible') ? 'PAUSED' : prevStateBeforeSites;
-    if (gameState === 'PLAYING') canvas.focus();
-  });
-
   // ==========================================
   // 9. BUCLE PRINCIPAL CON DELTA-TIME (60Hz / 120Hz)
   // ==========================================
@@ -2826,10 +2812,14 @@
     buildLevel(true, true);
     draw();
     showModal(
-      '🦖 DINOCORP v4.2 DELUXE',
-      'Llega a casa antes de las 6:00 PM. Usa Flechas/WASD, Espacio para Saltar, X/Shift para Sello y C/Z para Dash Ejecutivo (⚡).',
+      '🦖 DINOCORP: SALIDA A TIEMPO',
+      'Supera los 4 sectores corporativos y llega a casa antes de las 6:00 PM.',
       '▶ INICIAR JORNADA',
-      () => { initAudio(); }
+      () => { initAudio(); },
+      false,
+      false,
+      true,
+      true
     );
 
     let lastTime = performance.now();

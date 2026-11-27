@@ -510,7 +510,7 @@
                 <div>
                     <h1 class="hub-title font-arcade">ARCADE HUB</h1>
                     <p class="hub-subtitle">
-                        Colección interactiva de juegos web · Cada juego vive en su propia fila y módulo independiente para no interferir entre sí.
+                        Colección interactiva de juegos web · Elige un título, juega al instante y supera tus récords.
                     </p>
                 </div>
             </div>
@@ -529,8 +529,7 @@
     <main>
         <div class="container">
             <div class="section-head">
-                <span class="section-label">Catálogo de juegos (1 juego por fila)</span>
-                <span class="isolation-note">Aislamiento por carpeta: <code>games/&lt;juego&gt;/</code></span>
+                <span class="section-label">Catálogo de juegos</span>
             </div>
 
             <section class="achievements-panel" id="achievementsPanel" aria-label="Logros corporativos"></section>
@@ -541,7 +540,7 @@
 
     <footer class="hub-footer">
         <div class="container">
-            Arcade Hub · Cada proyecto mantiene su propio HTML, estilos, estado y controles independientes.
+            Arcade Hub · Colección de Juegos Web Corporativos
         </div>
     </footer>
 
@@ -715,13 +714,6 @@
                 const footerMeta = document.createElement('div');
                 footerMeta.className = 'game-footer-meta';
 
-                if (game.folder) {
-                    const folderBadge = document.createElement('span');
-                    folderBadge.className = 'folder-badge';
-                    folderBadge.textContent = game.folder;
-                    footerMeta.appendChild(folderBadge);
-                }
-
                 if (Array.isArray(game.tags)) {
                     game.tags.forEach(tagText => {
                         const tag = document.createElement('span');
@@ -752,40 +744,6 @@
                 row.appendChild(action);
                 listEl.appendChild(row);
             });
-
-            // Dedicated next-slot placeholder row
-            const nextNum = String(catalog.length + 1).padStart(2, '0');
-            const slotRow = document.createElement('div');
-            slotRow.className = 'slot-row';
-
-            const slotLeft = document.createElement('div');
-            slotLeft.className = 'slot-left';
-
-            const slotBadge = document.createElement('span');
-            slotBadge.className = 'slot-badge font-arcade';
-            slotBadge.textContent = '#' + nextNum;
-
-            const slotTextWrap = document.createElement('div');
-            const slotTitle = document.createElement('div');
-            slotTitle.className = 'slot-title';
-            slotTitle.textContent = 'Próximo juego en camino';
-
-            const slotDesc = document.createElement('div');
-            slotDesc.className = 'slot-desc';
-            slotDesc.textContent = 'Listo para agregar en games/<nombre-del-juego>/ sin cruzarse con los demás.';
-
-            slotTextWrap.appendChild(slotTitle);
-            slotTextWrap.appendChild(slotDesc);
-            slotLeft.appendChild(slotBadge);
-            slotLeft.appendChild(slotTextWrap);
-
-            const slotHint = document.createElement('span');
-            slotHint.className = 'pill';
-            slotHint.textContent = 'Espacio reservado';
-
-            slotRow.appendChild(slotLeft);
-            slotRow.appendChild(slotHint);
-            listEl.appendChild(slotRow);
         })();
     </script>
 </body>

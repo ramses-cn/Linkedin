@@ -62,7 +62,7 @@
             background: #0f172a; border: 2px solid #334155; border-radius: 14px;
             overflow: hidden; position: relative; display: flex; flex-direction: column;
             animation: pulse-glow 4s infinite ease-in-out;
-            --chrome: 200px;
+            --chrome: 150px;
             width: min(100%, calc((100dvh - var(--chrome)) * 16 / 9));
             min-width: min(100%, 320px);
         }
@@ -118,8 +118,20 @@
         .modal-p { font-size: 12px; color: #cbd5e1; max-width: 440px; margin-bottom: 14px; line-height: 1.55; }
         .controls-card {
             background: #0f172a; border: 1px solid #334155; border-radius: 10px;
-            padding: 10px 14px; font-size: 11px; color: #94a3b8;
-            margin-bottom: 16px; line-height: 1.55; max-width: 440px;
+            padding: 10px 14px; font-size: 11px; color: #cbd5e1;
+            margin-bottom: 14px; line-height: 1.5; max-width: 460px; width: 100%;
+            text-align: left;
+        }
+        .controls-card-title {
+            font-size: 10px; font-weight: 800; color: #facc15;
+            text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;
+        }
+        .controls-list {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;
+        }
+        .controls-card kbd {
+            display: inline-block; background: #1e293b; border: 1px solid #475569;
+            border-radius: 4px; padding: 1px 5px; font-size: 10px; font-weight: 700; color: #f8fafc;
         }
         .stats-card {
             background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(234, 179, 8, 0.5);
@@ -187,14 +199,15 @@
             #musicStatus, #soundStatus { display: none; }
         }
         @media (max-height: 480px) {
-            footer { display: none; }
             main { padding: 4px 10px; }
-            .arcade-cabinet { --chrome: 96px; }
-            .overlay-modal { padding: 10px; }
-            .emoji-hero { font-size: 22px; margin-bottom: 4px; }
+            .arcade-cabinet { --chrome: 86px; }
+            .overlay-modal { padding: 8px 12px; }
+            .emoji-hero { display: none; }
             .modal-h2 { font-size: 11px; margin-bottom: 4px; }
-            .modal-p { font-size: 10.5px; margin-bottom: 8px; }
-            .controls-card { display: none; }
+            .modal-p { font-size: 10px; margin-bottom: 6px; line-height: 1.35; }
+            .controls-card { padding: 6px 10px; margin-bottom: 8px; font-size: 10px; }
+            .controls-card-title { font-size: 9px; margin-bottom: 3px; }
+            .controls-list { gap: 4px 8px; }
             .stats-card { padding: 8px 10px; margin-bottom: 6px; }
             .btn-arcade { padding: 8px 12px; font-size: 9px; }
         }
@@ -221,7 +234,7 @@
                 <a href="../../index.html" class="hdr-btn" title="Volver a la portada">← <span class="hide-xs">Portada</span></a>
                 <span style="font-size:20px;">💼</span>
                 <div>
-                    <h1 class="font-arcade hdr-title">OFICINA ARCADE 1984 <span style="color:#38bdf8;">v2.0</span></h1>
+                    <h1 class="font-arcade hdr-title">OFICINA ARCADE 1984</h1>
                     <p class="hdr-sub">Alcanza la meta de ingresos y mantén la racha para ascender</p>
                 </div>
             </div>
@@ -263,8 +276,12 @@
                         Recolecta sobres de pago <b style="color:#34d399">($)</b>, bonos dorados <b style="color:#facc15">(★)</b>, café veloz y escudos <i>Out of Office</i>; esquiva la burocracia sin perder tu racha de combo hasta llegar a tus <b style="color:#facc15">Vacaciones en la Playa</b>.
                     </p>
                     <div class="controls-card">
-                        <p>💻 <b>PC:</b> Flechas / WASD para moverte · <b>P / Esc</b> para Pausar</p>
-                        <p>📱 <b>Móvil:</b> Botones virtuales o desliza el dedo sobre el juego</p>
+                        <div class="controls-card-title">Comandos del Juego</div>
+                        <div class="controls-list">
+                            <div><kbd>⬆️ ⬇️ ⬅️ ➡️</kbd> / <kbd>WASD</kbd> Moverse</div>
+                            <div><kbd>P</kbd> / <kbd>Esc</kbd> Pausar</div>
+                            <div style="grid-column: 1 / -1;">📱 <b>Móvil:</b> D-Pad táctil o desliza el dedo</div>
+                        </div>
                     </div>
                     <button onclick="startGame()" class="font-arcade btn-arcade btn-gold">
                         ▶ COMENZAR JUEGO
@@ -341,10 +358,6 @@
             </div>
         </div>
     </main>
-
-    <footer>
-        Oficina 1984 Arcade v2.0 • Combos, Pisos Temáticos & Modo Vacaciones
-    </footer>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
