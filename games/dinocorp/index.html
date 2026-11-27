@@ -1,0 +1,2637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>DinoCorp: Misión Salida a Tiempo (v4.1 Deluxe Edition)</title>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --panel-bg: #1e293b;
+      --accent-gold: #fbbf24;
+      --accent-green: #22c55e;
+      --accent-blue: #38bdf8;
+      --accent-red: #ef4444;
+      --text-light: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Barra Superior de Control, Selector de Mundos y Herramientas v4.0 */
+    #top-bar {
+      min-height: 44px;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 10px;
+      font-size: 12px;
+      flex-wrap: wrap;
+      gap: 6px;
+      z-index: 30;
+      flex-shrink: 0;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .brand-title {
+      font-weight: 900;
+      color: var(--accent-gold);
+      font-size: 13.5px;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .badge-deluxe {
+      background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+      color: #fff;
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .level-selector {
+      display: flex;
+      gap: 3px;
+      background: #090d16;
+      padding: 3px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+    }
+
+    .btn-lvl {
+      background: transparent;
+      color: #94a3b8;
+      border: none;
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-lvl:hover {
+      color: #fff;
+      background: #1e293b;
+    }
+
+    .btn-lvl.active {
+      background: var(--accent-gold);
+      color: #090d16;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-top {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .btn-top:hover {
+      background: #334155;
+      border-color: var(--accent-gold);
+    }
+
+    .btn-top.active-mode {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    /* Contenedor General (Soporta Vista Completa y Simulador Móvil 390px) */
+    #viewport-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+    }
+
+    #app-workspace {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: width 0.25s ease, height 0.25s ease;
+    }
+
+    /* Marco de Simulación Móvil en Escritorio (390x780) */
+    #app-workspace.simulated-mobile-frame {
+      width: 390px;
+      height: min(760px, 95%);
+      border: 10px solid #1e293b;
+      border-radius: 32px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 0 2px #475569;
+      background: #0f172a;
+    }
+
+    #stage-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      padding: 4px;
+    }
+
+    canvas {
+      display: block;
+      background: #38bdf8;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75);
+      border: 2px solid #334155;
+      border-radius: 8px;
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 16 / 9;
+      image-rendering: pixelated;
+      outline: none;
+    }
+
+    /* Controles Táctiles Bimodales con 5 Botones (Izq, Der, Dash, Sello, Salto) */
+    #touch-layer {
+      display: none;
+      width: 100%;
+      z-index: 15;
+    }
+
+    body.touch-enabled #touch-layer,
+    #app-workspace.simulated-mobile-frame #touch-layer {
+      display: flex;
+    }
+
+    @media (orientation: landscape) {
+      body.touch-enabled #app-workspace:not(.simulated-mobile-frame) #touch-layer {
+        position: absolute;
+        bottom: 12px;
+        left: 0;
+        right: 0;
+        padding: 0 18px;
+        justify-content: space-between;
+        align-items: flex-end;
+        pointer-events: none;
+      }
+    }
+
+    @media (orientation: portrait) {
+      body.touch-enabled #stage-container {
+        flex: 0 0 58%;
+      }
+      body.touch-enabled #touch-layer {
+        flex: 1;
+        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+        border-top: 2px solid #334155;
+        padding: 12px 14px;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    /* Reglas equivalentes para el Simulador Móvil en Escritorio */
+    #app-workspace.simulated-mobile-frame #stage-container {
+      flex: 0 0 56%;
+      padding: 6px;
+    }
+    #app-workspace.simulated-mobile-frame #touch-layer {
+      flex: 1;
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      border-top: 2px solid #334155;
+      padding: 10px 12px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .touch-cluster {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+      touch-action: none;
+      align-items: center;
+    }
+
+    .touch-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(30, 41, 59, 0.85);
+      border: 2.5px solid rgba(255, 255, 255, 0.45);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 17px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      transition: transform 0.05s, background 0.1s;
+    }
+
+    .touch-btn span {
+      font-size: 8.5px;
+      font-weight: 800;
+      margin-top: 1px;
+      opacity: 0.92;
+      letter-spacing: 0.3px;
+    }
+
+    .touch-btn.btn-dash {
+      background: rgba(14, 165, 233, 0.85);
+      border-color: #7dd3fc;
+      width: 56px;
+      height: 56px;
+    }
+
+    .touch-btn.btn-stamp {
+      background: rgba(34, 197, 94, 0.85);
+      border-color: #86efac;
+      width: 60px;
+      height: 60px;
+    }
+
+    .touch-btn.btn-jump {
+      background: rgba(239, 68, 68, 0.88);
+      border-color: #fca5a5;
+      width: 68px;
+      height: 68px;
+    }
+
+    .touch-btn.active {
+      transform: scale(0.90);
+      background: rgba(251, 191, 36, 0.96);
+      color: #0f172a;
+      border-color: #fff;
+    }
+
+    /* Ventanas Modales */
+    .overlay-modal {
+      position: absolute;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.88);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 40;
+    }
+
+    .overlay-modal.visible {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #1e293b;
+      border: 2px solid var(--accent-gold);
+      border-radius: 14px;
+      max-width: 490px;
+      width: 100%;
+      max-height: 92%;
+      overflow-y: auto;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.88);
+    }
+
+    .modal-card h2 {
+      color: var(--accent-gold);
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .modal-card p {
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .stats-grid {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      text-align: left;
+      font-size: 12px;
+      border: 1px solid #334155;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4.5px 0;
+      border-bottom: 1px dashed #334155;
+    }
+
+    .stats-row:last-child {
+      border-bottom: none;
+      font-weight: 800;
+      color: var(--accent-gold);
+      font-size: 14px;
+      padding-top: 7px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+      color: #052e16;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 20px;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 4px;
+      box-shadow: 0 3px 0 #14532d;
+    }
+
+    .btn-primary:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #14532d;
+    }
+
+    .code-area {
+      width: 100%;
+      height: 130px;
+      background: #090d16;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 11px;
+      resize: none;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de Control y Selector de los 4 Mundos -->
+  <header id="top-bar">
+    <div class="brand-group">
+      <a href="../../index.html" class="btn-top" style="text-decoration:none;" title="Volver a la portada">← Portada</a>
+      <div class="brand-title">
+        🦖 DINOCORP <span class="badge-deluxe">v4.1 DELUXE</span>
+      </div>
+      <div class="level-selector" id="level-tabs">
+        <button class="btn-lvl active" data-lvl="0">1-1 Oficina</button>
+        <button class="btn-lvl" data-lvl="1">1-2 Sótano</button>
+        <button class="btn-lvl" data-lvl="2">1-3 Azotea</button>
+        <button class="btn-lvl" data-lvl="3">1-4 Directorio</button>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn-top" id="btn-debug" title="Ver Hitboxes, Vectores, Coyote Time y FPS">🛠️ Hitboxes</button>
+      <button class="btn-top" id="btn-sim-mobile" title="Alternar marco de teléfono móvil (390px) o pantalla completa">📱 Vista Móvil</button>
+      <button class="btn-top active-mode" id="btn-music" title="Activar/Silenciar Música 8-Bits">🎵 Música</button>
+      <button class="btn-top active-mode" id="btn-mute" title="Activar/Silenciar Efectos de Sonido">🔊 SFX</button>
+      <button class="btn-top" id="btn-sites" title="Obtener código HTML para incrustar en Google Sites">🌐 Google Sites</button>
+      <button class="btn-top" id="btn-pause" title="Pausar y ver Récords (Tecla P)">⏸ Pausa</button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <div id="viewport-wrapper">
+    <main id="app-workspace">
+      <div id="stage-container">
+        <canvas id="gameCanvas" width="800" height="450" tabindex="0"></canvas>
+
+        <!-- Modal de Juego (Pausa / Nivel Superado / Victoria / Récords) -->
+        <div class="overlay-modal" id="overlay-modal">
+          <div class="modal-card">
+            <h2 id="modal-title">ESTADO DE JORNADA</h2>
+            <p id="modal-desc"></p>
+            <div class="stats-grid" id="modal-stats"></div>
+            <button class="btn-primary" id="btn-modal-action">CONTINUAR</button>
+          </div>
+        </div>
+
+        <!-- Modal de Exportación para Google Sites -->
+        <div class="overlay-modal" id="sites-modal">
+          <div class="modal-card">
+            <h2>🌐 Incrustar en Google Sites</h2>
+            <p>Copia este código HTML autocontenido y pégalo en <b>Google Sites &rarr; Insertar &rarr; Incorporar &rarr; Código Incorporado</b>:</p>
+            <textarea class="code-area" id="sites-code-box" readonly></textarea>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" id="btn-copy-sites" style="background:#fbbf24; box-shadow: 0 3px 0 #b45309;">📋 Copiar Código</button>
+              <button class="btn-primary" id="btn-close-sites" style="background:#475569; color:#fff; box-shadow: 0 3px 0 #1e293b;">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles Táctiles Multi-Touch con Dash Ejecutivo -->
+      <div id="touch-layer">
+        <div class="touch-cluster">
+          <div class="touch-btn" data-action="left">◀<span>IZQ</span></div>
+          <div class="touch-btn" data-action="right">▶<span>DER</span></div>
+        </div>
+        <div class="touch-cluster">
+          <div class="touch-btn btn-dash" data-action="dash">⚡<span>DASH</span></div>
+          <div class="touch-btn btn-stamp" data-action="stamp">★<span>SELLO</span></div>
+          <div class="touch-btn btn-jump" data-action="jump">▲<span>SALTO</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const stageContainer = document.getElementById('stage-container');
+  const W = 800;
+  const H = 450;
+  const GROUND_Y = 390;
+
+  // Ajuste responsivo automático mantendo proporción 16:9 exacta
+  function fitCanvas() {
+    const rect = stageContainer.getBoundingClientRect();
+    const availW = Math.max(200, rect.width - 8);
+    const availH = Math.max(120, rect.height - 8);
+    const ratio = W / H;
+    let dw = availW;
+    let dh = availW / ratio;
+    if (dh > availH) {
+      dh = availH;
+      dw = availH * ratio;
+    }
+    canvas.style.width = `${Math.floor(dw)}px`;
+    canvas.style.height = `${Math.floor(dh)}px`;
+  }
+  window.addEventListener('resize', fitCanvas);
+  if (window.ResizeObserver) new ResizeObserver(fitCanvas).observe(stageContainer);
+
+  // Auto-detección de pantalla táctil
+  if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) {
+    document.body.classList.add('touch-enabled');
+  }
+
+  // ==========================================
+  // 1. PERSISTENCIA EN LOCALSTORAGE (RÉCORDS Y CARPETAS)
+  // ==========================================
+  const SAVE_KEY = 'dinocorp_v4_deluxe_save';
+  let saveData = {
+    highScore: 0,
+    bestTimeRemaining: 0,
+    foldersPerLevel: { 0: 0, 1: 0, 2: 0, 3: 0 }
+  };
+
+  function loadRecords() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        saveData.highScore = parsed.highScore || 0;
+        saveData.bestTimeRemaining = parsed.bestTimeRemaining || 0;
+        if (parsed.foldersPerLevel) {
+          saveData.foldersPerLevel = { ...saveData.foldersPerLevel, ...parsed.foldersPerLevel };
+        }
+      }
+    } catch (e) {}
+  }
+
+  function saveRecords(currentScore, levelIdx, collectedFoldersCount, timeRemaining = null) {
+    try {
+      if (currentScore > saveData.highScore) saveData.highScore = currentScore;
+      if (collectedFoldersCount > (saveData.foldersPerLevel[levelIdx] || 0)) {
+        saveData.foldersPerLevel[levelIdx] = collectedFoldersCount;
+      }
+      if (timeRemaining !== null && timeRemaining > saveData.bestTimeRemaining) {
+        saveData.bestTimeRemaining = timeRemaining;
+      }
+      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    } catch (e) {}
+  }
+
+  function getTotalSavedFolders() {
+    return Object.values(saveData.foldersPerLevel).reduce((a, b) => a + b, 0);
+  }
+
+  loadRecords();
+
+  // ==========================================
+  // 2. MOTOR DE AUDIO Y SECUENCIADOR CHIPTUNE 8-BITS
+  // ==========================================
+  const AUDIO_PREFS_KEY = 'dinocorp_audio_prefs';
+  let audioCtx = null;
+  let sfxMuted = false;
+  let musicEnabled = true;
+
+  function loadAudioPrefs() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(AUDIO_PREFS_KEY) || '{}');
+      if (typeof raw.sfxMuted === 'boolean') sfxMuted = raw.sfxMuted;
+      if (typeof raw.musicEnabled === 'boolean') musicEnabled = raw.musicEnabled;
+    } catch (e) {}
+    const mBtn = document.getElementById('btn-music');
+    const sBtn = document.getElementById('btn-mute');
+    if (mBtn) {
+      mBtn.textContent = musicEnabled ? '🎵 Música' : '🎵 Off';
+      mBtn.classList.toggle('active-mode', musicEnabled);
+    }
+    if (sBtn) {
+      sBtn.textContent = sfxMuted ? '🔇 SFX Off' : '🔊 SFX';
+      sBtn.classList.toggle('active-mode', !sfxMuted);
+    }
+  }
+
+  function saveAudioPrefs() {
+    try {
+      localStorage.setItem(AUDIO_PREFS_KEY, JSON.stringify({ sfxMuted, musicEnabled }));
+    } catch (e) {}
+  }
+
+  loadAudioPrefs();
+
+  function initAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playTone(freq, type, duration, vol = 0.1, slideFreq = null) {
+    if (sfxMuted || !audioCtx || freq <= 0) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      if (slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, audioCtx.currentTime + duration);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  function playMusicNote(freq, type, duration, vol = 0.04) {
+    if (!musicEnabled || !audioCtx || freq <= 0) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0008, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  const SFX = {
+    jump: () => playTone(240, 'square', 0.15, 0.09, 580),
+    dash: () => playTone(620, 'sawtooth', 0.12, 0.09, 180),
+    skid: () => playTone(190, 'triangle', 0.06, 0.06, 120),
+    stomp: () => playTone(170, 'triangle', 0.14, 0.14, 70),
+    kick: () => playTone(130, 'sawtooth', 0.17, 0.14, 420),
+    clink: () => {
+      playTone(960, 'square', 0.05, 0.1, 1280);
+      setTimeout(() => playTone(1400, 'square', 0.07, 0.08, 920), 40);
+    },
+    coin: () => {
+      playTone(987, 'square', 0.07, 0.09);
+      setTimeout(() => playTone(1318, 'square', 0.2, 0.09), 65);
+    },
+    folder: () => {
+      [587, 784, 987, 1174].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.1, 0.1), i * 55));
+    },
+    powerup: () => {
+      [330, 392, 659, 523, 587, 784].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.08, 0.1), i * 50));
+    },
+    energy: () => {
+      [523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() => playTone(f, 'sawtooth', 0.09, 0.1), i * 45));
+    },
+    stamp: () => playTone(500, 'triangle', 0.11, 0.1, 210),
+    emptyInk: () => playTone(130, 'sawtooth', 0.09, 0.08, 95),
+    hurt: () => playTone(260, 'sawtooth', 0.25, 0.13, 85),
+    warp: () => {
+      [600, 480, 360, 240].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.09, 0.11), i * 65));
+    },
+    win: () => {
+      [523, 659, 784, 1046, 784, 1046].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.14, 0.11), i * 100));
+    }
+  };
+
+  // Partituras Chiptune de 16 pasos para cada Mundo + Tema Invencible
+  const MELODIES = {
+    0: [330, 330, 0, 330, 0, 262, 330, 0, 392, 0, 0, 0, 196, 0, 0, 0], // 1-1 Oficina Overworld
+    1: [131, 262, 110, 220, 117, 233, 0, 0, 131, 262, 110, 220, 117, 233, 0, 0], // 1-2 Sótano Bassline
+    2: [523, 0, 392, 0, 330, 392, 523, 659, 587, 0, 392, 0, 294, 392, 587, 0], // 1-3 Azotea Atlética
+    3: [220, 233, 220, 196, 220, 233, 220, 175, 220, 233, 220, 262, 247, 233, 220, 0], // 1-4 Búnker Directorio
+    star: [523, 523, 523, 0, 523, 0, 494, 523, 0, 440, 440, 440, 0, 440, 0, 392] // Bebida Energética Invencible
+  };
+
+  let musicStep = 0;
+  let musicStepTimer = 0;
+
+  function updateChiptuneSequencer(dt) {
+    if (!musicEnabled || !audioCtx || gameState !== 'PLAYING') return;
+    const remainingSecs = MAX_WORKDAY_SECS - workdayTimer;
+    const hurryFactor = remainingSecs < 30 ? 0.65 : 1.0;
+    const starFactor = dino.invincibleTimer > 0 ? 0.72 : 1.0;
+    const framesPerNote = 11 * hurryFactor * starFactor;
+
+    musicStepTimer += dt;
+    if (musicStepTimer >= framesPerNote) {
+      musicStepTimer = 0;
+      const track = dino.invincibleTimer > 0 ? MELODIES.star : (MELODIES[currentLevelIdx] || MELODIES[0]);
+      const note = track[musicStep % track.length];
+      if (note > 0) {
+        const wave = currentLevelIdx === 1 && dino.invincibleTimer <= 0 ? 'triangle' : 'square';
+        playMusicNote(note, wave, 0.13, 0.035);
+      }
+      musicStep = (musicStep + 1) % track.length;
+    }
+  }
+
+  // ==========================================
+  // 3. SISTEMA DE ENTRADA: TECLADO + MULTI-TOUCH + GAMEPAD API
+  // ==========================================
+  const keys = { left: false, right: false, jump: false, stamp: false, dash: false };
+  const touchState = { left: false, right: false, jump: false, stamp: false, dash: false };
+  const padState = { left: false, right: false, jump: false, stamp: false, dash: false };
+  let jumpJustPressed = false;
+  let stampJustPressed = false;
+  let dashJustPressed = false;
+  const touchButtons = Array.from(document.querySelectorAll('.touch-btn'));
+
+  function clearInputs() {
+    keys.left = keys.right = keys.jump = keys.stamp = keys.dash = false;
+    touchState.left = touchState.right = touchState.jump = touchState.stamp = touchState.dash = false;
+    padState.left = padState.right = padState.jump = padState.stamp = padState.dash = false;
+    jumpJustPressed = false;
+    stampJustPressed = false;
+    dashJustPressed = false;
+    touchButtons.forEach(btn => btn.classList.remove('active'));
+  }
+
+  window.addEventListener('pointerdown', () => {
+    initAudio();
+    canvas.focus();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    initAudio();
+    if (['ArrowLeft', 'KeyA'].includes(e.code)) { keys.left = true; e.preventDefault(); }
+    if (['ArrowRight', 'KeyD'].includes(e.code)) { keys.right = true; e.preventDefault(); }
+    if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) {
+      if (!keys.jump) jumpJustPressed = true;
+      keys.jump = true;
+      e.preventDefault();
+    }
+    if (['KeyX', 'KeyK', 'ShiftLeft', 'ShiftRight'].includes(e.code)) {
+      if (!keys.stamp) stampJustPressed = true;
+      keys.stamp = true;
+      e.preventDefault();
+    }
+    if (['KeyC', 'KeyZ', 'KeyJ'].includes(e.code)) {
+      if (!keys.dash) dashJustPressed = true;
+      keys.dash = true;
+      e.preventDefault();
+    }
+    if (e.code === 'KeyP') togglePause();
+  });
+
+  window.addEventListener('keyup', (e) => {
+    if (['ArrowLeft', 'KeyA'].includes(e.code)) keys.left = false;
+    if (['ArrowRight', 'KeyD'].includes(e.code)) keys.right = false;
+    if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) keys.jump = false;
+    if (['KeyX', 'KeyK', 'ShiftLeft', 'ShiftRight'].includes(e.code)) keys.stamp = false;
+    if (['KeyC', 'KeyZ', 'KeyJ'].includes(e.code)) keys.dash = false;
+  });
+
+  // Seguimiento Multi-Touch en tiempo real
+  const touchLayer = document.getElementById('touch-layer');
+  function updateTouches(e) {
+    e.preventDefault();
+    initAudio();
+    const prevJ = touchState.jump;
+    const prevS = touchState.stamp;
+    const prevD = touchState.dash;
+    touchState.left = touchState.right = touchState.jump = touchState.stamp = touchState.dash = false;
+
+    for (let i = 0; i < e.touches.length; i++) {
+      const t = e.touches[i];
+      for (const btn of touchButtons) {
+        const r = btn.getBoundingClientRect();
+        if (t.clientX >= r.left - 8 && t.clientX <= r.right + 8 && t.clientY >= r.top - 8 && t.clientY <= r.bottom + 8) {
+          touchState[btn.dataset.action] = true;
+        }
+      }
+    }
+    if (touchState.jump && !prevJ) jumpJustPressed = true;
+    if (touchState.stamp && !prevS) stampJustPressed = true;
+    if (touchState.dash && !prevD) dashJustPressed = true;
+    touchButtons.forEach(btn => btn.classList.toggle('active', touchState[btn.dataset.action]));
+  }
+
+  touchLayer.addEventListener('touchstart', updateTouches, { passive: false });
+  touchLayer.addEventListener('touchmove', updateTouches, { passive: false });
+  touchLayer.addEventListener('touchend', updateTouches, { passive: false });
+  touchLayer.addEventListener('touchcancel', updateTouches, { passive: false });
+
+  touchButtons.forEach(btn => {
+    const act = btn.dataset.action;
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      initAudio();
+      if (act === 'jump' && !touchState.jump) jumpJustPressed = true;
+      if (act === 'stamp' && !touchState.stamp) stampJustPressed = true;
+      if (act === 'dash' && !touchState.dash) dashJustPressed = true;
+      touchState[act] = true;
+      btn.classList.add('active');
+    });
+    window.addEventListener('mouseup', () => {
+      touchState[act] = false;
+      btn.classList.remove('active');
+    });
+  });
+
+  // Soporte HTML5 Gamepad API (Controles Xbox / PlayStation / Bluetooth)
+  function pollGamepad() {
+    if (!navigator.getGamepads) return;
+    const pads = navigator.getGamepads();
+    const gp = pads && (pads[0] || pads[1] || pads[2] || pads[3]);
+    if (!gp) return;
+
+    const prevJ = padState.jump;
+    const prevS = padState.stamp;
+    const prevD = padState.dash;
+
+    const axisX = gp.axes && gp.axes.length > 0 ? gp.axes[0] : 0;
+    const dpadLeft = gp.buttons[14] && gp.buttons[14].pressed;
+    const dpadRight = gp.buttons[15] && gp.buttons[15].pressed;
+
+    padState.left = axisX < -0.35 || dpadLeft;
+    padState.right = axisX > 0.35 || dpadRight;
+    padState.jump = Boolean((gp.buttons[0] && gp.buttons[0].pressed) || (gp.buttons[12] && gp.buttons[12].pressed));
+    padState.stamp = Boolean(gp.buttons[2] && gp.buttons[2].pressed);
+    padState.dash = Boolean((gp.buttons[1] && gp.buttons[1].pressed) || (gp.buttons[5] && gp.buttons[5].pressed));
+
+    if (padState.jump && !prevJ) jumpJustPressed = true;
+    if (padState.stamp && !prevS) stampJustPressed = true;
+    if (padState.dash && !prevD) dashJustPressed = true;
+  }
+
+  const isLeft = () => keys.left || touchState.left || padState.left;
+  const isRight = () => keys.right || touchState.right || padState.right;
+  const isJump = () => keys.jump || touchState.jump || padState.jump;
+
+  // ==========================================
+  // 4. CONFIGURACIÓN DE LOS 4 MUNDOS Y VARIABLES PRO
+  // ==========================================
+  const LEVELS = [
+    { id: '1-1', name: 'Oficina Central', theme: 'office', worldW: 4200, goalX: 3880, hasHouse: false },
+    { id: '1-2', name: 'Sótano de Servidores', theme: 'underground', worldW: 4100, goalX: 3320, hasHouse: false, hasWarpZone: true },
+    { id: '1-3', name: 'Azotea Corporativa', theme: 'athletic', worldW: 3900, goalX: 3620, hasHouse: false },
+    { id: '1-4', name: 'Búnker de Directorio', theme: 'castle', worldW: 4550, goalX: 4180, hasHouse: true }
+  ];
+
+  let currentLevelIdx = 0;
+  let gameState = 'PLAYING'; // PLAYING, PAUSED, ENDING, VICTORY
+  let debugMode = false;
+  let fpsTracker = 60;
+
+  let cameraX = 0;
+  let shakeTimer = 0;
+  let shakeIntensity = 0;
+
+  let score = 0;
+  let bonuses = 0;
+  let lives = 3;
+  let workdayTimer = 0;
+  const MAX_WORKDAY_SECS = 160;
+  const LUNCH_DEADLINE_SECS = 70;
+  let entryMarked = false;
+  let checkpointReached = false;
+  let lunchBonusAwarded = false;
+
+  // Jugador: Dino Ejecutivo con físicas Coyote Time, Jump Buffer, Squash & Stretch y Dash
+  const dino = {
+    x: 80, y: 300, w: 34, h: 46,
+    vx: 0, vy: 0, dir: 1,
+    onGround: false,
+    coyoteTimer: 0,      // 8 frames de gracia tras salir de un borde
+    jumpBufferTimer: 0,  // 8 frames de memoria de salto antes de tocar suelo
+    scaleX: 1,           // Deformación elástica Squash & Stretch
+    scaleY: 1,
+    dashTimer: 0,        // Duración del impulso Dash Ejecutivo
+    dashCooldown: 0,     // Enfriamiento entre Dashes
+    invincibleTimer: 0,  // 8s (480 frames) de Bebida Energética Dorada
+    jawOpenTimer: 0,     // Expresión facial al lanzar sello o hacer Dash
+    senior: false,
+    invulnerable: 0,
+    ink: 5, maxInk: 5, inkRegenTimer: 0,
+    animFrame: 0, visible: true
+  };
+
+  const endingSeq = {
+    phase: 0, flagY: 130,
+    tieFlying: false, tieX: 0, tieY: 0, tieVx: 0, tieVy: 0, tieAngle: 0,
+    houseLightOn: false
+  };
+
+  let platforms = [];
+  let movingChairs = [];
+  let qBlocks = [];
+  let folders = [];      // 3 Carpetas Confidenciales por nivel
+  let foldersCollectedInLevel = 0;
+  let items = [];
+  let enemies = [];
+  let paperPlanes = [];
+  let firebars = [];
+  let warpPipes = [];
+  let stamps = [];
+  let afterimages = [];  // Estelas visuales para Dash y Bebida Energética
+  let boss = null;
+  let bridgeBlocks = [];
+  let goldenSwitch = null;
+  let floatingTexts = [];
+  let particles = [];
+
+  function triggerScreenShake(frames = 14, intensity = 5) {
+    shakeTimer = Math.max(shakeTimer, frames);
+    shakeIntensity = Math.max(shakeIntensity, intensity);
+  }
+
+  function addFloatingText(text, x, y, color = '#fbbf24') {
+    floatingTexts.push({ text, x, y, vy: -1.4, life: 60, color });
+  }
+
+  function addParticles(x, y, color, count = 8) {
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.8) * 6,
+        size: 3 + Math.random() * 4,
+        color,
+        life: 22 + Math.random() * 18
+      });
+    }
+  }
+
+  function syncLevelTabs() {
+    document.querySelectorAll('.btn-lvl').forEach((btn, idx) => {
+      btn.classList.toggle('active', idx === currentLevelIdx);
+    });
+  }
+
+  document.querySelectorAll('.btn-lvl').forEach(btn => {
+    btn.addEventListener('click', () => {
+      initAudio();
+      currentLevelIdx = parseInt(btn.dataset.lvl, 10);
+      checkpointReached = false;
+      entryMarked = false;
+      overlayModal.classList.remove('visible');
+      gameState = 'PLAYING';
+      buildLevel(false, true);
+      canvas.focus();
+    });
+  });
+
+  let levelTimers = [];
+  function addLevelTimer(fn, ms) {
+    const id = setTimeout(fn, ms);
+    levelTimers.push(id);
+    return id;
+  }
+  function clearLevelTimers() {
+    levelTimers.forEach(id => clearTimeout(id));
+    levelTimers = [];
+  }
+
+  // ==========================================
+  // 5. CONSTRUCCIÓN DE LOS 4 MUNDOS + CARPETAS Y BEBIDA ENERGÉTICA
+  // ==========================================
+  function buildLevel(fullReset = false, switchedLevel = false) {
+    clearInputs();
+    clearLevelTimers();
+
+    if (fullReset) {
+      score = 0;
+      bonuses = 0;
+      lives = 3;
+      currentLevelIdx = 0;
+      checkpointReached = false;
+      lunchBonusAwarded = false;
+      entryMarked = false;
+      dino.senior = false;
+    }
+
+    if (switchedLevel) {
+      checkpointReached = false;
+      entryMarked = false;
+    }
+
+    syncLevelTabs();
+
+    workdayTimer = checkpointReached ? 35 : 0;
+    dino.x = checkpointReached ? 1920 : 80;
+    dino.y = 260;
+    dino.vx = 0;
+    dino.vy = 0;
+    dino.dir = 1;
+    dino.coyoteTimer = 0;
+    dino.jumpBufferTimer = 0;
+    dino.scaleX = 1;
+    dino.scaleY = 1;
+    dino.dashTimer = 0;
+    dino.dashCooldown = 0;
+    dino.invincibleTimer = 0;
+    dino.jawOpenTimer = 0;
+    dino.ink = dino.maxInk;
+    dino.invulnerable = 0;
+    dino.visible = true;
+
+    endingSeq.phase = 0;
+    endingSeq.flagY = 130;
+    endingSeq.tieFlying = false;
+    endingSeq.houseLightOn = false;
+
+    platforms = [];
+    movingChairs = [];
+    qBlocks = [];
+    folders = [];
+    foldersCollectedInLevel = 0;
+    items = [];
+    enemies = [];
+    paperPlanes = [];
+    firebars = [];
+    warpPipes = [];
+    stamps = [];
+    afterimages = [];
+    boss = null;
+    bridgeBlocks = [];
+    goldenSwitch = null;
+    floatingTexts = [];
+    particles = [];
+
+    if (currentLevelIdx === 0) {
+      // MUNDO 1-1: OFICINA CENTRAL
+      platforms = [
+        { x: 0, y: GROUND_Y, w: 2250, h: 60, type: 'ground' },
+        { x: 2400, y: GROUND_Y, w: 580, h: 60, type: 'ground' },
+        { x: 3130, y: GROUND_Y, w: 1100, h: 60, type: 'ground' },
+        { x: 520, y: 330, w: 55, h: 60, type: 'cabinet' },
+        { x: 760, y: 310, w: 60, h: 80, type: 'cabinet' },
+        { x: 1020, y: 295, w: 130, h: 18, type: 'desk' },
+        { x: 1280, y: 300, w: 65, h: 90, type: 'cabinet' },
+        { x: 1500, y: 275, w: 160, h: 18, type: 'desk' },
+        { x: 2520, y: 285, w: 130, h: 18, type: 'desk' },
+        { x: 2740, y: 225, w: 130, h: 18, type: 'desk' },
+        { x: 3320, y: 310, w: 65, h: 80, type: 'cabinet' },
+        { x: 3650, y: 345, w: 50, h: 45, type: 'step' },
+        { x: 3700, y: 300, w: 50, h: 90, type: 'step' }
+      ];
+      movingChairs = [
+        { x: 2265, minX: 2255, maxX: 2320, y: 335, minY: 335, maxY: 335, w: 75, h: 18, vx: 1.5, vy: 0 },
+        { x: 2995, minX: 2985, maxX: 3050, y: 325, minY: 325, maxY: 325, w: 75, h: 18, vx: -1.6, vy: 0 }
+      ];
+      qBlocks = [
+        { x: 400, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'coffee' },
+        { x: 640, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'coin' },
+        { x: 1065, y: 195, w: 36, h: 36, hit: false, bounce: 0, content: 'toner' },
+        { x: 1560, y: 175, w: 36, h: 36, hit: false, bounce: 0, content: 'energy', golden: true }, // ¡Bebida Energética Dorada!
+        { x: 2100, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'toner' },
+        { x: 2565, y: 185, w: 36, h: 36, hit: false, bounce: 0, content: 'coffee' },
+        { x: 3450, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'coin' }
+      ];
+      folders = [
+        { x: 775, y: 255, w: 28, h: 24, collected: false },
+        { x: 2310, y: 245, w: 28, h: 24, collected: false },
+        { x: 2790, y: 170, w: 28, h: 24, collected: false }
+      ];
+      enemies = [
+        { type: 'paper', x: 690, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.3, vy: 0, state: 'walk', alive: true },
+        { type: 'printer', x: 1120, y: GROUND_Y - 38, w: 40, h: 38, vx: -1.1, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 1195, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.3, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 1530, y: 275 - 34, w: 34, h: 34, vx: 1.2, vy: 0, minX: 1500, maxX: 1650, state: 'walk', alive: true },
+        { type: 'printer', x: 2620, y: GROUND_Y - 38, w: 40, h: 38, vx: -1.3, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 2780, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.4, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 3520, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.5, vy: 0, state: 'walk', alive: true }
+      ];
+    } else if (currentLevelIdx === 1) {
+      // MUNDO 1-2: SÓTANO DE SERVIDORES + WARP ZONE EN EL TECHO
+      platforms = [
+        { x: 0, y: GROUND_Y, w: 1550, h: 60, type: 'ground' },
+        { x: 1720, y: GROUND_Y, w: 1180, h: 60, type: 'ground' },
+        { x: 3040, y: GROUND_Y, w: 1060, h: 60, type: 'ground' },
+        { x: 280, y: 115, w: 2380, h: 26, type: 'ceiling' },
+        { x: 2820, y: 115, w: 680, h: 26, type: 'ceiling' },
+        { x: 560, y: 310, w: 60, h: 80, type: 'cabinet' },
+        { x: 920, y: 285, w: 60, h: 105, type: 'cabinet' },
+        { x: 1240, y: 270, w: 150, h: 20, type: 'desk' },
+        { x: 2150, y: 290, w: 65, h: 100, type: 'cabinet' },
+        { x: 2480, y: 255, w: 150, h: 20, type: 'desk' },
+        { x: 3460, y: 141, w: 40, h: 249, type: 'cabinet' }
+      ];
+      movingChairs = [
+        { x: 1565, minX: 1555, maxX: 1640, y: 335, minY: 335, maxY: 335, w: 75, h: 18, vx: 1.5, vy: 0 },
+        { x: 2710, minX: 2710, maxX: 2710, y: 260, minY: 95, maxY: 340, w: 78, h: 18, vx: 0, vy: -1.8 },
+        { x: 2915, minX: 2905, maxX: 2960, y: 330, minY: 330, maxY: 330, w: 75, h: 18, vx: 1.4, vy: 0 }
+      ];
+      qBlocks = [
+        { x: 380, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'coffee' },
+        { x: 740, y: 255, w: 36, h: 36, hit: false, bounce: 0, content: 'toner' },
+        { x: 1290, y: 185, w: 36, h: 36, hit: false, bounce: 0, content: 'energy', golden: true },
+        { x: 1980, y: 260, w: 36, h: 36, hit: false, bounce: 0, content: 'coffee' },
+        { x: 2530, y: 175, w: 36, h: 36, hit: false, bounce: 0, content: 'toner' }
+      ];
+      folders = [
+        { x: 935, y: 235, w: 28, h: 24, collected: false },
+        { x: 1615, y: 250, w: 28, h: 24, collected: false },
+        { x: 3120, y: 75, w: 28, h: 24, collected: false } // En la ruta secreta sobre el techo hacia la Warp Zone
+      ];
+      enemies = [
+        { type: 'printer', x: 720, y: GROUND_Y - 38, w: 40, h: 38, vx: -1.3, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 810, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.4, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 1120, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.5, vy: 0, state: 'walk', alive: true },
+        { type: 'printer', x: 2020, y: GROUND_Y - 38, w: 40, h: 38, vx: -1.4, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 2340, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.5, vy: 0, state: 'walk', alive: true }
+      ];
+      warpPipes = [
+        { x: 3660, y: GROUND_Y - 75, w: 58, h: 75, targetLvl: 2, label: 'MUNDO 1-3' },
+        { x: 3860, y: GROUND_Y - 75, w: 58, h: 75, targetLvl: 3, label: 'MUNDO 1-4' }
+      ];
+    } else if (currentLevelIdx === 2) {
+      // MUNDO 1-3: AZOTEA CORPORATIVA ATLÉTICA
+      platforms = [
+        { x: 0, y: GROUND_Y, w: 520, h: 60, type: 'ground' },
+        { x: 640, y: 310, w: 220, h: 22, type: 'desk' },
+        { x: 1020, y: 260, w: 240, h: 22, type: 'desk' },
+        { x: 1460, y: 320, w: 260, h: 22, type: 'desk' },
+        { x: 1850, y: GROUND_Y, w: 420, h: 60, type: 'ground' },
+        { x: 2420, y: 290, w: 220, h: 22, type: 'desk' },
+        { x: 2820, y: 235, w: 220, h: 22, type: 'desk' },
+        { x: 3380, y: GROUND_Y, w: 520, h: 60, type: 'ground' }
+      ];
+      movingChairs = [
+        { x: 535, minX: 525, maxX: 565, y: 340, minY: 340, maxY: 340, w: 72, h: 18, vx: 1.3, vy: 0 },
+        { x: 890, minX: 890, maxX: 890, y: 280, minY: 190, maxY: 345, w: 76, h: 18, vx: 0, vy: -1.7 },
+        { x: 1290, minX: 1275, maxX: 1375, y: 290, minY: 290, maxY: 290, w: 78, h: 18, vx: 1.8, vy: 0 },
+        { x: 1740, minX: 1730, maxX: 1770, y: 345, minY: 345, maxY: 345, w: 74, h: 18, vx: -1.4, vy: 0 },
+        { x: 2290, minX: 2280, maxX: 2340, y: 330, minY: 330, maxY: 330, w: 76, h: 18, vx: 1.6, vy: 0 },
+        { x: 2670, minX: 2670, maxX: 2670, y: 260, minY: 165, maxY: 335, w: 76, h: 18, vx: 0, vy: 1.8 },
+        { x: 3080, minX: 3055, maxX: 3290, y: 280, minY: 280, maxY: 280, w: 84, h: 18, vx: 2.1, vy: 0 }
+      ];
+      qBlocks = [
+        { x: 320, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'coffee' },
+        { x: 730, y: 210, w: 36, h: 36, hit: false, bounce: 0, content: 'toner' },
+        { x: 1120, y: 165, w: 36, h: 36, hit: false, bounce: 0, content: 'energy', golden: true },
+        { x: 2020, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'coffee' },
+        { x: 2510, y: 195, w: 36, h: 36, hit: false, bounce: 0, content: 'toner' }
+      ];
+      folders = [
+        { x: 910, y: 140, w: 28, h: 24, collected: false },
+        { x: 1580, y: 250, w: 28, h: 24, collected: false },
+        { x: 2920, y: 165, w: 28, h: 24, collected: false }
+      ];
+      enemies = [
+        { type: 'paper', x: 740, y: 310 - 34, w: 34, h: 34, vx: -1.2, vy: 0, minX: 645, maxX: 850, state: 'walk', alive: true },
+        { type: 'printer', x: 1140, y: 260 - 38, w: 40, h: 38, vx: -1.2, vy: 0, minX: 1025, maxX: 1250, state: 'walk', alive: true },
+        { type: 'paper', x: 1580, y: 320 - 34, w: 34, h: 34, vx: -1.4, vy: 0, minX: 1465, maxX: 1710, state: 'walk', alive: true },
+        { type: 'printer', x: 2910, y: 235 - 38, w: 40, h: 38, vx: -1.3, vy: 0, minX: 2825, maxX: 3030, state: 'walk', alive: true }
+      ];
+    } else if (currentLevelIdx === 3) {
+      // MUNDO 1-4: BÚNKER DE DIRECTORIO + JEFE 5:55 PM + LLEGADA A CASA
+      platforms = [
+        { x: 0, y: GROUND_Y, w: 1280, h: 60, type: 'ground' },
+        { x: 1420, y: GROUND_Y, w: 1120, h: 60, type: 'ground' },
+        { x: 2680, y: GROUND_Y, w: 920, h: 60, type: 'ground' },
+        { x: 3960, y: GROUND_Y, w: 590, h: 60, type: 'ground' },
+        { x: 600, y: 290, w: 120, h: 20, type: 'desk' },
+        { x: 960, y: 265, w: 130, h: 20, type: 'desk' },
+        { x: 1740, y: 280, w: 140, h: 20, type: 'desk' },
+        { x: 2180, y: 270, w: 140, h: 20, type: 'desk' },
+        { x: 3020, y: 275, w: 140, h: 20, type: 'desk' },
+        { x: 3520, y: 345, w: 40, h: 45, type: 'step' },
+        { x: 3560, y: 305, w: 40, h: 85, type: 'step' }
+      ];
+      movingChairs = [
+        { x: 1295, minX: 1285, maxX: 1340, y: 335, minY: 335, maxY: 335, w: 72, h: 18, vx: 1.5, vy: 0 },
+        { x: 2555, minX: 2545, maxX: 2600, y: 335, minY: 335, maxY: 335, w: 72, h: 18, vx: -1.6, vy: 0 },
+        { x: 3720, minX: 3650, maxX: 3840, y: 250, minY: 250, maxY: 250, w: 85, h: 16, vx: 1.6, vy: 0 }
+      ];
+      qBlocks = [
+        { x: 380, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'coffee' },
+        { x: 1005, y: 175, w: 36, h: 36, hit: false, bounce: 0, content: 'energy', golden: true },
+        { x: 1960, y: 265, w: 36, h: 36, hit: false, bounce: 0, content: 'coffee' },
+        { x: 3070, y: 180, w: 36, h: 36, hit: false, bounce: 0, content: 'toner' }
+      ];
+      folders = [
+        { x: 645, y: 215, w: 28, h: 24, collected: false },
+        { x: 2235, y: 195, w: 28, h: 24, collected: false },
+        { x: 3765, y: 190, w: 28, h: 24, collected: false } // Sobre la plataforma móvil encima del Jefe 5:55 PM
+      ];
+      firebars = [
+        { x: 660, y: 290, angle: 0, speed: 0.042, radius: 68 },
+        { x: 1810, y: 280, angle: 1.5, speed: -0.046, radius: 72 },
+        { x: 2250, y: 270, angle: 0.7, speed: 0.048, radius: 72 },
+        { x: 3090, y: 275, angle: 2.2, speed: -0.05, radius: 74 }
+      ];
+      enemies = [
+        { type: 'printer', x: 820, y: GROUND_Y - 38, w: 40, h: 38, vx: -1.4, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 1620, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.5, vy: 0, state: 'walk', alive: true },
+        { type: 'printer', x: 2860, y: GROUND_Y - 38, w: 40, h: 38, vx: -1.5, vy: 0, state: 'walk', alive: true },
+        { type: 'paper', x: 3320, y: GROUND_Y - 34, w: 34, h: 34, vx: -1.6, vy: 0, state: 'walk', alive: true }
+      ];
+      for (let bx = 3600; bx < 3960; bx += 30) {
+        bridgeBlocks.push({ x: bx, y: GROUND_Y, w: 30, h: 24, falling: false, vy: 0 });
+      }
+      goldenSwitch = { x: 3975, y: GROUND_Y - 44, w: 34, h: 44, pressed: false };
+      boss = {
+        x: 3840, y: GROUND_Y - 76, w: 62, h: 76,
+        vx: -1.3, vy: 0, hp: 5, maxHp: 5,
+        alive: true, fallingInPit: false,
+        shielded: true, vulnerableTimer: 0, hurtCooldown: 0, actionTimer: 90,
+        projectiles: []
+      };
+    }
+
+    cameraX = Math.max(0, dino.x - 200);
+  }
+
+  // ==========================================
+  // 6. FÍSICAS PRO (COYOTE TIME, JUMP BUFFER, SQUASH & STRETCH, DASH)
+  // ==========================================
+  function rectIntersect(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function hurtDino(reasonText = '¡TRÁMITE PENDIENTE!') {
+    if (dino.invincibleTimer > 0 || dino.invulnerable > 0 || gameState !== 'PLAYING') return;
+    triggerScreenShake(16, 6);
+
+    if (dino.senior) {
+      dino.senior = false;
+      dino.invulnerable = 95;
+      SFX.hurt();
+      addFloatingText('¡PERDISTE EL SACO SENIOR!', dino.x - 10, dino.y - 15, '#f87171');
+      addParticles(dino.x + dino.w / 2, dino.y + dino.h / 2, '#1e293b', 12);
+    } else {
+      lives--;
+      SFX.hurt();
+      addFloatingText(reasonText, dino.x - 10, dino.y - 20, '#ef4444');
+      saveRecords(score, currentLevelIdx, foldersCollectedInLevel);
+      if (lives <= 0) {
+        showModal(
+          '¡ATRAPADO EN HORAS EXTRAS!',
+          `Agotaste tus vidas en el nivel ${LEVELS[currentLevelIdx].id} (${LEVELS[currentLevelIdx].name}).`,
+          'REINTENTAR DESDE 1-1',
+          () => buildLevel(true, true)
+        );
+      } else {
+        buildLevel(false, false);
+      }
+    }
+  }
+
+  let planeSpawnTimer = 0;
+
+  function update(dt) {
+    pollGamepad();
+    updateChiptuneSequencer(dt);
+
+    if (gameState === 'PAUSED' || gameState === 'VICTORY') return;
+    if (gameState === 'ENDING') {
+      updateEndingSequence(dt);
+      return;
+    }
+
+    const lvl = LEVELS[currentLevelIdx];
+
+    // 1. Reloj de Jornada y Temporizadores Pro
+    workdayTimer += (dt / 60);
+    if (workdayTimer >= MAX_WORKDAY_SECS) {
+      hurtDino('¡TIEMPO AGOTADO (6:00 PM)!');
+      return;
+    }
+
+    if (shakeTimer > 0) shakeTimer = Math.max(0, shakeTimer - dt);
+    if (dino.invulnerable > 0) dino.invulnerable = Math.max(0, dino.invulnerable - dt);
+    if (dino.invincibleTimer > 0) dino.invincibleTimer = Math.max(0, dino.invincibleTimer - dt);
+    if (dino.dashCooldown > 0) dino.dashCooldown = Math.max(0, dino.dashCooldown - dt);
+    if (dino.jawOpenTimer > 0) dino.jawOpenTimer = Math.max(0, dino.jawOpenTimer - dt);
+
+    // Recuperación elástica de Squash & Stretch hacia 1.0
+    dino.scaleX += (1 - dino.scaleX) * 0.22 * dt;
+    dino.scaleY += (1 - dino.scaleY) * 0.22 * dt;
+
+    if (dino.ink < dino.maxInk) {
+      dino.inkRegenTimer += dt;
+      if (dino.inkRegenTimer >= 150) {
+        dino.ink++;
+        dino.inkRegenTimer = 0;
+      }
+    }
+
+    // 2. Habilidad: DASH EJECUTIVO (Tecla C / Z / Botón ⚡ DASH)
+    if (dashJustPressed && dino.dashCooldown <= 0 && dino.dashTimer <= 0) {
+      dino.dashTimer = 11;
+      dino.dashCooldown = 42;
+      dino.jawOpenTimer = 14;
+      dino.scaleX = 1.34;
+      dino.scaleY = 0.78;
+      SFX.dash();
+      addParticles(dino.x + dino.w / 2, dino.y + dino.h / 2, '#38bdf8', 7);
+    }
+    dashJustPressed = false;
+
+    // 3. Movimiento Horizontal, Polvo de Derrape (Skid Dust) y Estelas
+    const speedMultiplier = dino.invincibleTimer > 0 ? 1.35 : 1.0;
+    const maxSpeed = 4.6 * speedMultiplier;
+    const accel = (dino.onGround ? 0.46 : 0.30) * speedMultiplier;
+
+    if (dino.dashTimer > 0) {
+      dino.dashTimer -= dt;
+      dino.vx = dino.dir * 10.4;
+      dino.vy = 0;
+      if (Math.floor(dino.dashTimer * 2) % 2 === 0) {
+        afterimages.push({ x: dino.x, y: dino.y, dir: dino.dir, color: 'rgba(56, 189, 248, 0.45)', life: 12 });
+      }
+    } else {
+      if (isLeft()) {
+        if (dino.onGround && dino.vx > 2.2) {
+          // Polvo blanco de derrape al cambiar bruscamente de dirección
+          addParticles(dino.x + dino.w, dino.y + dino.h - 2, '#f8fafc', 3);
+          SFX.skid();
+        }
+        dino.vx = Math.max(dino.vx - accel * dt, -maxSpeed);
+        dino.dir = -1;
+        dino.animFrame += 0.19 * dt * speedMultiplier;
+      } else if (isRight()) {
+        if (dino.onGround && dino.vx < -2.2) {
+          addParticles(dino.x, dino.y + dino.h - 2, '#f8fafc', 3);
+          SFX.skid();
+        }
+        dino.vx = Math.min(dino.vx + accel * dt, maxSpeed);
+        dino.dir = 1;
+        dino.animFrame += 0.19 * dt * speedMultiplier;
+      } else {
+        dino.vx *= Math.pow(0.82, dt);
+        if (Math.abs(dino.vx) < 0.08) dino.vx = 0;
+        dino.animFrame = 0;
+      }
+    }
+
+    // Estela arcoíris si tiene Bebida Energética Dorada activa
+    if (dino.invincibleTimer > 0 && Math.floor(dino.invincibleTimer) % 3 === 0) {
+      const rainbowColors = ['rgba(239,68,68,0.45)', 'rgba(251,191,36,0.45)', 'rgba(34,197,94,0.45)', 'rgba(56,189,248,0.45)'];
+      const col = rainbowColors[Math.floor(dino.invincibleTimer / 3) % rainbowColors.length];
+      afterimages.push({ x: dino.x, y: dino.y, dir: dino.dir, color: col, life: 10 });
+    }
+
+    // 4. COYOTE TIME (8 frames) + JUMP BUFFERING (8 frames)
+    if (dino.onGround) {
+      dino.coyoteTimer = 8;
+    } else if (dino.coyoteTimer > 0) {
+      dino.coyoteTimer = Math.max(0, dino.coyoteTimer - dt);
+    }
+
+    if (jumpJustPressed) {
+      dino.jumpBufferTimer = 8;
+      jumpJustPressed = false;
+    } else if (dino.jumpBufferTimer > 0) {
+      dino.jumpBufferTimer = Math.max(0, dino.jumpBufferTimer - dt);
+    }
+
+    if (dino.jumpBufferTimer > 0 && dino.coyoteTimer > 0) {
+      dino.vy = -11.5;
+      dino.onGround = false;
+      dino.coyoteTimer = 0;
+      dino.jumpBufferTimer = 0;
+      dino.dashTimer = 0;
+      // Estiramiento elástico de salto (Stretch)
+      dino.scaleX = 0.76;
+      dino.scaleY = 1.28;
+      SFX.jump();
+      addParticles(dino.x + dino.w / 2, dino.y + dino.h, '#e2e8f0', 4);
+    }
+
+    if (dino.dashTimer <= 0) {
+      const gravity = (dino.vy < 0 && !isJump()) ? 1.15 : 0.48;
+      dino.vy = Math.min(dino.vy + gravity * dt, 13);
+    }
+
+    // 5. Lanzamiento de Sello "APROBADO"
+    if (stampJustPressed) {
+      if (!dino.senior) {
+        SFX.emptyInk();
+        addFloatingText('¡TOMA CAFÉ PARA USAR SELLO!', dino.x - 10, dino.y - 10, '#cbd5e1');
+      } else if (stamps.length >= 2) {
+        SFX.emptyInk();
+      } else if (dino.ink <= 0) {
+        SFX.emptyInk();
+        addFloatingText('¡SIN TINTA!', dino.x, dino.y - 10, '#f87171');
+      } else {
+        dino.ink--;
+        dino.jawOpenTimer = 15;
+        SFX.stamp();
+        stamps.push({
+          x: dino.dir === 1 ? dino.x + dino.w : dino.x - 24,
+          y: dino.y + 16, w: 26, h: 15,
+          vx: dino.dir * 7.8, vy: -2.6, bounces: 0, life: 62
+        });
+      }
+    }
+    stampJustPressed = false;
+
+    // 6. Sillas y Ascensores Móviles
+    for (const ch of movingChairs) {
+      const prevX = ch.x;
+      const prevY = ch.y;
+      if (ch.vx !== 0) {
+        ch.x += ch.vx * dt;
+        if (ch.x < ch.minX) { ch.x = ch.minX; ch.vx *= -1; }
+        if (ch.x > ch.maxX) { ch.x = ch.maxX; ch.vx *= -1; }
+      }
+      if (ch.vy !== 0) {
+        ch.y += ch.vy * dt;
+        if (ch.y < ch.minY) { ch.y = ch.minY; ch.vy *= -1; }
+        if (ch.y > ch.maxY) { ch.y = ch.maxY; ch.vy *= -1; }
+      }
+      ch.dx = ch.x - prevX;
+      ch.dy = ch.y - prevY;
+    }
+
+    // 7. Colisiones Eje X y Eje Y con detección de Aterrizaje Elástico (Squash)
+    const allSolids = [
+      ...platforms,
+      ...qBlocks,
+      ...warpPipes,
+      ...bridgeBlocks.filter(b => !b.falling)
+    ];
+
+    const wasOnGround = dino.onGround;
+    const prevFootY = dino.y + dino.h;
+
+    dino.x += dino.vx * dt;
+    if (dino.x < cameraX) { dino.x = cameraX; dino.vx = 0; }
+
+    const dinoHorizontalBox = { x: dino.x, y: dino.y + 6, w: dino.w, h: dino.h - 12 };
+    for (const s of allSolids) {
+      if (rectIntersect(dinoHorizontalBox, s)) {
+        if (dino.vx > 0) dino.x = s.x - dino.w;
+        else if (dino.vx < 0) dino.x = s.x + s.w;
+        dino.vx = 0;
+        dinoHorizontalBox.x = dino.x;
+      }
+    }
+
+    dino.y += dino.vy * dt;
+    dino.onGround = false;
+
+    for (const s of allSolids) {
+      if (rectIntersect(dino, s)) {
+        if (dino.vy > 0) {
+          if (!wasOnGround && dino.vy > 4.5) {
+            // Compresión elástica al aterrizar (Squash)
+            dino.scaleX = 1.28;
+            dino.scaleY = 0.74;
+          }
+          dino.y = s.y - dino.h;
+          dino.vy = 0;
+          dino.onGround = true;
+
+          if (s.targetLvl !== undefined) {
+            SFX.warp();
+            addFloatingText(`¡WARP ZONE A ${s.label}!`, dino.x - 30, dino.y - 25, '#4ade80');
+            currentLevelIdx = s.targetLvl;
+            buildLevel(false, true);
+            return;
+          }
+        } else if (dino.vy < 0) {
+          dino.y = s.y + s.h;
+          dino.vy = 0;
+          if (s.content) triggerQBlock(s);
+        }
+      }
+    }
+
+    for (const ch of movingChairs) {
+      const prevPlatY = ch.y - (ch.dy || 0);
+      if (
+        dino.vy >= -2 &&
+        dino.x + dino.w > ch.x + 4 &&
+        dino.x < ch.x + ch.w - 4 &&
+        prevFootY <= prevPlatY + 14 &&
+        dino.y + dino.h >= ch.y - 4
+      ) {
+        if (!wasOnGround && dino.vy > 4.5) {
+          dino.scaleX = 1.26;
+          dino.scaleY = 0.76;
+        }
+        dino.y = ch.y - dino.h;
+        dino.vy = 0;
+        dino.onGround = true;
+        dino.x += ch.dx || 0;
+      }
+    }
+
+    if (dino.y > H + 45) {
+      lives--;
+      SFX.hurt();
+      triggerScreenShake(16, 6);
+      saveRecords(score, currentLevelIdx, foldersCollectedInLevel);
+      if (lives <= 0) {
+        showModal('¡CAÍDA DEL SISTEMA!', 'Caíste al vacío. Usa el Coyote Time o el botón ⚡ DASH para cruzar abismos largos.', 'REINTENTAR DESDE 1-1', () => buildLevel(true, true));
+      } else {
+        buildLevel(false, false);
+      }
+      return;
+    }
+
+    // 8. Hitos de Jornada y Recolección de Carpetas Confidenciales (📁 0/3)
+    if (!entryMarked && dino.x >= 280) {
+      entryMarked = true;
+      SFX.coin();
+      score += 200;
+      addFloatingText('¡ENTRADA MARCADA 08:00 AM!', dino.x, dino.y - 25, '#4ade80');
+    }
+
+    if (!checkpointReached && dino.x >= 1900) {
+      checkpointReached = true;
+      SFX.powerup();
+      dino.ink = dino.maxInk;
+      if (!dino.senior) dino.senior = true;
+      if (workdayTimer <= LUNCH_DEADLINE_SECS) {
+        lunchBonusAwarded = true;
+        score += 500;
+        bonuses += 5;
+        addFloatingText('¡REFRIGERIO 1:00 PM RESPETADO! +$500', dino.x - 40, dino.y - 35, '#fbbf24');
+      } else {
+        addFloatingText('¡PUNTO DE CONTROL: REFRIGERIO!', dino.x - 20, dino.y - 30, '#38bdf8');
+      }
+      addParticles(1920, GROUND_Y - 40, '#22c55e', 16);
+    }
+
+    for (const fl of folders) {
+      if (!fl.collected && rectIntersect(dino, fl)) {
+        fl.collected = true;
+        foldersCollectedInLevel++;
+        SFX.folder();
+        score += 400;
+        addParticles(fl.x + 14, fl.y + 12, '#fbbf24', 12);
+        if (foldersCollectedInLevel === 3) {
+          score += 1000;
+          addFloatingText('📁 ¡3/3 CARPETAS CONFIDENCIALES! +$1000', dino.x - 50, dino.y - 30, '#fbbf24');
+        } else {
+          addFloatingText(`📁 CARPETA ${foldersCollectedInLevel}/3 (+$400)`, fl.x - 20, fl.y - 15, '#38bdf8');
+        }
+        saveRecords(score, currentLevelIdx, foldersCollectedInLevel);
+      }
+    }
+
+    // 9. Bloques [?] e Ítems (Café, Tóner y Bebida Energética Dorada)
+    for (const qb of qBlocks) {
+      if (qb.bounce > 0) qb.bounce = Math.max(0, qb.bounce - 0.6 * dt);
+    }
+
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      it.y += it.vy * dt;
+      it.vy = Math.min(it.vy + 0.35 * dt, 6);
+      for (const s of allSolids) {
+        if (rectIntersect(it, s) && it.vy > 0) {
+          it.y = s.y - it.h;
+          it.vy = 0;
+        }
+      }
+      if (rectIntersect(dino, it)) {
+        dino.jawOpenTimer = 16;
+        if (it.type === 'coffee') {
+          dino.senior = true;
+          dino.ink = dino.maxInk;
+          score += 300;
+          SFX.powerup();
+          addFloatingText('¡CAFÉ EXPRESO: DINO SENIOR!', dino.x - 10, dino.y - 20, '#fbbf24');
+        } else if (it.type === 'energy') {
+          dino.senior = true;
+          dino.ink = dino.maxInk;
+          dino.invincibleTimer = 480; // 8 segundos de invencibilidad arcoíris
+          score += 500;
+          SFX.energy();
+          triggerScreenShake(10, 4);
+          addFloatingText('⚡ ¡BEBIDA ENERGÉTICA: MODO INVENCIBLE!', dino.x - 45, dino.y - 25, '#fde047');
+        } else {
+          dino.ink = dino.maxInk;
+          score += 200;
+          SFX.coin();
+          addFloatingText('¡TÓNER: 100% TINTA!', dino.x, dino.y - 20, '#4ade80');
+        }
+        items.splice(i, 1);
+      }
+    }
+
+    // 10. Sellos Verdes "APROBADO"
+    for (let i = stamps.length - 1; i >= 0; i--) {
+      const st = stamps[i];
+      st.x += st.vx * dt;
+      st.y += st.vy * dt;
+      st.vy += 0.34 * dt;
+      st.life -= dt;
+      let removed = false;
+      for (const s of allSolids) {
+        if (rectIntersect(st, s)) {
+          if (st.vy > 0 && st.y + st.h - st.vy * dt <= s.y + 9 && st.bounces < 1) {
+            st.y = s.y - st.h;
+            st.vy = -5.2;
+            st.bounces++;
+          } else {
+            removed = true;
+          }
+          break;
+        }
+      }
+      if (st.life <= 0 || removed) stamps.splice(i, 1);
+    }
+
+    // 11. Enemigos con Gravedad Vertical Real y Colisión en Modo Invencible
+    for (const en of enemies) {
+      if (!en.alive) continue;
+
+      en.x += en.vx * dt;
+      if (en.minX && en.x < en.minX) { en.x = en.minX; en.vx *= -1; }
+      if (en.maxX && en.x + en.w > en.maxX) { en.x = en.maxX - en.w; en.vx *= -1; }
+
+      for (const s of allSolids) {
+        if (rectIntersect(en, s)) {
+          if (en.vx > 0) en.x = s.x - en.w;
+          else en.x = s.x + s.w;
+          en.vx *= -1;
+        }
+      }
+
+      en.vy = Math.min((en.vy || 0) + 0.45 * dt, 10);
+      en.y += en.vy * dt;
+      for (const s of allSolids) {
+        if (rectIntersect(en, s) && en.vy > 0) {
+          en.y = s.y - en.h;
+          en.vy = 0;
+        }
+      }
+
+      if (en.y > H + 50) {
+        en.alive = false;
+        continue;
+      }
+
+      if (en.type === 'printer' && en.state === 'sliding') {
+        for (const other of enemies) {
+          if (other !== en && other.alive && rectIntersect(en, other)) {
+            other.alive = false;
+            score += 150;
+            SFX.stomp();
+            triggerScreenShake(8, 4);
+            addParticles(other.x + 16, other.y + 16, '#f8fafc', 8);
+            addFloatingText('¡BARRIDO +150!', other.x, other.y, '#38bdf8');
+          }
+        }
+      }
+
+      for (let si = stamps.length - 1; si >= 0; si--) {
+        const st = stamps[si];
+        if (rectIntersect(st, en)) {
+          if (en.type === 'printer') {
+            st.vx *= -0.7;
+            st.vy = -4.5;
+            st.life = Math.min(st.life, 18);
+            SFX.clink();
+            addFloatingText('¡BLINDADA! PÍSALA', en.x - 10, en.y - 12, '#cbd5e1');
+          } else {
+            en.alive = false;
+            stamps.splice(si, 1);
+            score += 100;
+            SFX.stomp();
+            addParticles(en.x + 16, en.y + 16, '#ffffff', 8);
+            addFloatingText('¡ARCHIVADO!', en.x, en.y, '#4ade80');
+          }
+          break;
+        }
+      }
+
+      if (!en.alive) continue;
+
+      if (rectIntersect(dino, en)) {
+        // Si tiene Bebida Energética Dorada activa, destruye cualquier enemigo al contacto
+        if (dino.invincibleTimer > 0) {
+          en.alive = false;
+          score += 200;
+          SFX.kick();
+          triggerScreenShake(7, 3.5);
+          addParticles(en.x + 16, en.y + 16, '#fbbf24', 10);
+          addFloatingText('⚡ ¡DESPACHADO +200!', en.x, en.y, '#fde047');
+          continue;
+        }
+
+        const fallingOnTop = dino.vy > 0 && (prevFootY <= en.y + 16);
+        if (fallingOnTop) {
+          dino.vy = -8.8;
+          dino.scaleX = 0.80;
+          dino.scaleY = 1.22;
+          SFX.stomp();
+          if (en.type === 'paper') {
+            en.alive = false;
+            score += 100;
+            addParticles(en.x + 16, en.y + 16, '#ffffff', 8);
+          } else if (en.type === 'printer') {
+            if (en.state === 'walk' || en.state === 'sliding') {
+              en.state = 'stopped';
+              en.vx = 0;
+              addFloatingText('¡DETENIDA! PATÉALA', en.x - 10, en.y - 12, '#fbbf24');
+            } else {
+              en.state = 'sliding';
+              en.vx = dino.x < en.x ? 8.5 : -8.5;
+              SFX.kick();
+            }
+          }
+        } else if (en.type === 'printer' && en.state === 'stopped') {
+          en.state = 'sliding';
+          en.vx = dino.x < en.x ? 8.5 : -8.5;
+          dino.x += dino.x < en.x ? -6 : 6;
+          SFX.kick();
+        } else {
+          hurtDino('¡CHOCASTE CON PENDIENTE!');
+        }
+      }
+    }
+
+    // 12. Agujas de Fuego Giratorias en Mundo 1-4
+    for (const fb of firebars) {
+      fb.angle += fb.speed * dt;
+      for (let step = 1; step <= 4; step++) {
+        const dist = (fb.radius / 4) * step;
+        const fx = fb.x + Math.cos(fb.angle) * dist - 6;
+        const fy = fb.y + Math.sin(fb.angle) * dist - 6;
+        if (rectIntersect({ x: dino.x + 4, y: dino.y + 4, w: dino.w - 8, h: dino.h - 8 }, { x: fx, y: fy, w: 12, h: 12 })) {
+          hurtDino('¡RELOJ DE PRESIÓN ARDIENTE!');
+          break;
+        }
+      }
+    }
+
+    // 13. Aviones de Auditoría Urgente
+    if (dino.x > 1100 && dino.x < lvl.goalX - 450) {
+      planeSpawnTimer += dt;
+      if (planeSpawnTimer >= 175) {
+        planeSpawnTimer = 0;
+        const py = Math.random() > 0.5 ? GROUND_Y - 32 : GROUND_Y - 78;
+        paperPlanes.push({ x: cameraX + W + 40, y: py, w: 34, h: 16, vx: -5.2 });
+      }
+    }
+
+    for (let i = paperPlanes.length - 1; i >= 0; i--) {
+      const pp = paperPlanes[i];
+      pp.x += pp.vx * dt;
+      if (rectIntersect(dino, pp)) {
+        if (dino.invincibleTimer > 0) {
+          score += 150;
+          SFX.stomp();
+          addParticles(pp.x, pp.y, '#fbbf24', 6);
+        } else {
+          hurtDino('¡AUDITORÍA URGENTE!');
+        }
+        paperPlanes.splice(i, 1);
+        continue;
+      }
+      if (pp.x < cameraX - 80) paperPlanes.splice(i, 1);
+    }
+
+    // 14. Jefe Final e Interruptor Dorado (Mundo 1-4)
+    updateBoss(dt, prevFootY);
+
+    if (goldenSwitch && !goldenSwitch.pressed && rectIntersect(dino, goldenSwitch)) {
+      goldenSwitch.pressed = true;
+      SFX.powerup();
+      triggerScreenShake(22, 7);
+      score += 1000;
+      addFloatingText('¡INTERRUPTOR 6:00 PM ACTIVADO!', goldenSwitch.x - 90, goldenSwitch.y - 25, '#fbbf24');
+      bridgeBlocks.forEach((b, idx) => addLevelTimer(() => { b.falling = true; }, idx * 50));
+      if (boss && boss.alive) {
+        addLevelTimer(() => {
+          if (boss) {
+            boss.fallingInPit = true;
+            SFX.hurt();
+          }
+        }, 400);
+      }
+    }
+
+    for (const b of bridgeBlocks) {
+      if (b.falling) {
+        b.vy += 0.55 * dt;
+        b.y += b.vy * dt;
+      }
+    }
+
+    // 15. Meta del Nivel
+    if (dino.x + dino.w >= lvl.goalX && gameState === 'PLAYING') {
+      if (currentLevelIdx === 1 && dino.y + dino.h <= 120) {
+        // Sigue caminando sobre el techo hacia los tubos de la Warp Zone
+      } else {
+        gameState = 'ENDING';
+        endingSeq.phase = 1;
+        dino.vx = 0;
+        dino.vy = 0;
+        dino.x = lvl.goalX - 14;
+        const heightBonus = Math.max(200, Math.round((GROUND_Y - dino.y) * 5));
+        score += heightBonus;
+        const remSecs = Math.max(0, Math.ceil(MAX_WORKDAY_SECS - workdayTimer));
+        saveRecords(score, currentLevelIdx, foldersCollectedInLevel, remSecs);
+        SFX.win();
+        addFloatingText(`¡META ${lvl.id} SUPERADA! +$${heightBonus}`, dino.x - 60, dino.y - 20, '#4ade80');
+      }
+    }
+
+    const targetCam = dino.x - 230;
+    if (targetCam > cameraX) {
+      cameraX = Math.min(lvl.worldW - W, targetCam);
+    }
+
+    for (let i = afterimages.length - 1; i >= 0; i--) {
+      afterimages[i].life -= dt;
+      if (afterimages[i].life <= 0) afterimages.splice(i, 1);
+    }
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+      const ft = floatingTexts[i];
+      ft.y += ft.vy * dt;
+      ft.life -= dt;
+      if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 0.25 * dt;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+  }
+
+  function triggerQBlock(qb) {
+    if (qb.hit) {
+      SFX.clink();
+      return;
+    }
+    qb.hit = true;
+    qb.bounce = 8;
+    if (qb.content === 'coin') {
+      SFX.coin();
+      score += 100;
+      bonuses++;
+      addFloatingText('+$100 BONO', qb.x, qb.y - 16, '#fbbf24');
+    } else {
+      SFX.powerup();
+      items.push({ type: qb.content, x: qb.x + 4, y: qb.y - 30, w: 28, h: 28, vy: -4 });
+    }
+  }
+
+  function updateBoss(dt, prevFootY) {
+    if (!boss || !boss.alive) return;
+    if (boss.hurtCooldown > 0) boss.hurtCooldown = Math.max(0, boss.hurtCooldown - dt);
+    if (boss.fallingInPit) {
+      boss.y += 6.5 * dt;
+      if (boss.y > H + 80) boss.alive = false;
+      return;
+    }
+    if (dino.x < 3300) return;
+
+    boss.x += boss.vx * dt;
+    if (boss.x < 3620) { boss.x = 3620; boss.vx = Math.abs(boss.vx); }
+    if (boss.x > 3890) { boss.x = 3890; boss.vx = -Math.abs(boss.vx); }
+
+    boss.y += boss.vy * dt;
+    if (boss.y < GROUND_Y - boss.h) {
+      boss.vy += 0.42 * dt;
+    } else {
+      if (boss.vy > 4) {
+        boss.shielded = false;
+        boss.vulnerableTimer = 140;
+        triggerScreenShake(12, 5); // Sacudida de cámara cuando el Gerente aterriza pesadamente
+      }
+      boss.y = GROUND_Y - boss.h;
+      boss.vy = 0;
+    }
+
+    if (!boss.shielded) {
+      boss.vulnerableTimer -= dt;
+      if (boss.vulnerableTimer <= 0) boss.shielded = true;
+    }
+
+    boss.actionTimer -= dt;
+    if (boss.actionTimer <= 0) {
+      boss.actionTimer = 95;
+      if (boss.y >= GROUND_Y - boss.h - 2) boss.vy = -10.2;
+      const highShot = Math.random() > 0.5;
+      boss.projectiles.push({
+        x: boss.x - 16,
+        y: highShot ? boss.y + 12 : boss.y + 44,
+        w: 44, h: 18, vx: -4.5,
+        label: highShot ? 'REUNIÓN 5:55' : '¡URGENTE!'
+      });
+    }
+
+    for (let i = boss.projectiles.length - 1; i >= 0; i--) {
+      const pr = boss.projectiles[i];
+      pr.x += pr.vx * dt;
+      if (rectIntersect(dino, pr)) {
+        hurtDino('¡REUNIÓN DE VIERNES 5:55 PM!');
+        boss.projectiles.splice(i, 1);
+        continue;
+      }
+      if (pr.x < cameraX - 60) boss.projectiles.splice(i, 1);
+    }
+
+    for (let i = stamps.length - 1; i >= 0; i--) {
+      const st = stamps[i];
+      if (rectIntersect(st, boss)) {
+        if (boss.shielded) {
+          st.vx = -Math.abs(st.vx) * 0.8;
+          st.vy = -4.5;
+          SFX.clink();
+          addFloatingText('¡ESCUDO ACTIVO! ESPERA QUE SALTE', boss.x - 50, boss.y - 16, '#f87171');
+        } else {
+          boss.hp--;
+          stamps.splice(i, 1);
+          SFX.stomp();
+          triggerScreenShake(9, 4);
+          addFloatingText(`¡APROBADO! (${boss.hp}/${boss.maxHp})`, boss.x, boss.y - 15, '#4ade80');
+          if (boss.hp <= 0) {
+            boss.alive = false;
+            score += 1500;
+            SFX.powerup();
+          }
+        }
+        break;
+      }
+    }
+
+    if (boss.alive && rectIntersect(dino, boss)) {
+      const stompTop = dino.vy > 0 && (prevFootY <= boss.y + 18);
+      if ((stompTop && !boss.shielded) || dino.invincibleTimer > 0) {
+        if (boss.hurtCooldown <= 0) {
+          dino.vy = -9.5;
+          boss.hp--;
+          boss.hurtCooldown = 35;
+          SFX.stomp();
+          triggerScreenShake(10, 4);
+          addFloatingText(`¡IMPACTO! (${Math.max(0, boss.hp)}/${boss.maxHp})`, boss.x, boss.y - 15, '#4ade80');
+          if (boss.hp <= 0) { boss.alive = false; score += 1500; SFX.powerup(); }
+        }
+      } else {
+        hurtDino('¡EL JEFE TE ASIGNÓ UN REPORTE!');
+      }
+    }
+  }
+
+  function updateEndingSequence(dt) {
+    const lvl = LEVELS[currentLevelIdx];
+    if (endingSeq.phase === 1) {
+      dino.y = Math.min(GROUND_Y - dino.h, dino.y + 4.2 * dt);
+      endingSeq.flagY = Math.min(GROUND_Y - 50, endingSeq.flagY + 4.2 * dt);
+      if (dino.y >= GROUND_Y - dino.h) {
+        if (!lvl.hasHouse) {
+          endingSeq.phase = 3;
+          addLevelTimer(() => {
+            const nextIdx = currentLevelIdx + 1;
+            showModal(
+              `✅ ¡NIVEL ${lvl.id} COMPLETADO!`,
+              `Superaste ${lvl.name}. Prepárate para el siguiente sector corporativo.`,
+              `AVANZAR A MUNDO ${LEVELS[nextIdx].id} (${LEVELS[nextIdx].name})`,
+              () => {
+                currentLevelIdx = nextIdx;
+                buildLevel(false, true);
+              }
+            );
+          }, 500);
+        } else {
+          endingSeq.phase = 2;
+          endingSeq.tieFlying = true;
+          endingSeq.tieX = dino.x + 18;
+          endingSeq.tieY = dino.y + 20;
+          endingSeq.tieVx = -2.2;
+          endingSeq.tieVy = -7.5;
+          addFloatingText('¡ADIÓS CORBATA, FIN DE JORNADA!', dino.x - 40, dino.y - 30, '#fbbf24');
+        }
+      }
+    } else if (endingSeq.phase === 2) {
+      dino.dir = 1;
+      dino.x += 2.6 * dt;
+      dino.animFrame += 0.16 * dt;
+      cameraX = Math.min(lvl.worldW - W, dino.x - 230);
+
+      if (endingSeq.tieFlying) {
+        endingSeq.tieX += endingSeq.tieVx * dt;
+        endingSeq.tieY += endingSeq.tieVy * dt;
+        endingSeq.tieVy += 0.28 * dt;
+        endingSeq.tieAngle += 0.25 * dt;
+      }
+
+      if (dino.x >= lvl.goalX + 185) {
+        dino.visible = false;
+        endingSeq.houseLightOn = true;
+        endingSeq.phase = 3;
+        SFX.win();
+        addLevelTimer(() => {
+          gameState = 'VICTORY';
+          showModal(
+            '🏠 ¡LLEGASTE A CASA A TIEMPO!',
+            'Completaste los 4 mundos de DinoCorp v4.1 Deluxe, derrotaste al Gerente de las 5:55 PM y ya estás descansando en casa.',
+            'JUGAR NUEVA CAMPAÑA',
+            () => buildLevel(true, true)
+          );
+        }, 850);
+      }
+    }
+  }
+
+  // ==========================================
+  // 7. RENDERIZADO MULTICAPA CON PARALLAX Y T-REX EXPRESIVO
+  // ==========================================
+  function drawParallaxLayers(lvl) {
+    // CAPA 1 (0.15x cameraX): Horizonte lejano, nubes o estrellas
+    const p1 = -(cameraX * 0.15) % 800;
+    for (let ox = p1; ox < W; ox += 800) {
+      if (lvl.theme === 'office' || lvl.theme === 'athletic') {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.fillRect(ox + 90, 65, 85, 22);
+        ctx.fillRect(ox + 310, 48, 110, 26);
+        ctx.fillRect(ox + 580, 72, 95, 22);
+      } else {
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.25)';
+        for (let i = 0; i < 8; i++) {
+          ctx.fillRect(ox + i * 95 + 30, 55 + (i % 3) * 28, 4, 4);
+        }
+      }
+    }
+
+    // CAPA 2 (0.40x cameraX): Siluetas de rascacielos / Racks de servidores / Pilares
+    const p2 = -(cameraX * 0.40) % 600;
+    for (let ox = p2; ox < W; ox += 600) {
+      if (lvl.theme === 'office' || lvl.theme === 'athletic') {
+        ctx.fillStyle = lvl.theme === 'athletic' ? 'rgba(30, 41, 59, 0.45)' : 'rgba(51, 65, 85, 0.28)';
+        ctx.fillRect(ox + 40, 170, 95, 220);
+        ctx.fillRect(ox + 180, 130, 115, 260);
+        ctx.fillRect(ox + 360, 155, 105, 235);
+      } else if (lvl.theme === 'underground') {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+        ctx.fillRect(ox + 60, 140, 70, 250);
+        ctx.fillRect(ox + 280, 140, 70, 250);
+        ctx.fillRect(ox + 460, 140, 70, 250);
+      } else {
+        ctx.fillStyle = 'rgba(69, 10, 10, 0.55)';
+        ctx.fillRect(ox + 80, 90, 55, 300);
+        ctx.fillRect(ox + 340, 90, 55, 300);
+      }
+    }
+  }
+
+  function draw() {
+    const lvl = LEVELS[currentLevelIdx];
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+
+    if (lvl.theme === 'office') {
+      skyGrad.addColorStop(0, '#38bdf8');
+      skyGrad.addColorStop(1, '#bae6fd');
+    } else if (lvl.theme === 'underground') {
+      skyGrad.addColorStop(0, '#090d16');
+      skyGrad.addColorStop(1, '#1e293b');
+    } else if (lvl.theme === 'athletic') {
+      skyGrad.addColorStop(0, '#0284c7');
+      skyGrad.addColorStop(0.6, '#f97316');
+      skyGrad.addColorStop(1, '#fde047');
+    } else {
+      skyGrad.addColorStop(0, '#18181b');
+      skyGrad.addColorStop(0.7, '#450a0a');
+      skyGrad.addColorStop(1, '#991b1b');
+    }
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Dibujar Capas Parallax de Fondo
+    drawParallaxLayers(lvl);
+
+    ctx.save();
+    // Aplicar Screen Shake si está activo
+    const shakeX = shakeTimer > 0 ? (Math.random() - 0.5) * shakeIntensity * 2 : 0;
+    const shakeY = shakeTimer > 0 ? (Math.random() - 0.5) * shakeIntensity * 2 : 0;
+    ctx.translate(-Math.floor(cameraX) + shakeX, shakeY);
+
+    if (lvl.theme === 'office') {
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(820, 55, 2900, GROUND_Y - 55);
+      for (let wx = 900; wx < 3600; wx += 220) {
+        ctx.fillStyle = '#7dd3fc';
+        ctx.fillRect(wx, 95, 130, 110);
+      }
+    } else if (lvl.theme === 'underground') {
+      for (let rx = 200; rx < 3400; rx += 260) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(rx, 145, 75, 245);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(rx + 12, 165, 8, 4);
+        ctx.fillRect(rx + 12, 185, 8, 4);
+      }
+    }
+
+    drawBiometricGate(280, GROUND_Y - 120, 'ENTRADA 08:00 AM', entryMarked ? '#22c55e' : '#f59e0b');
+    drawLunchZone(1880, GROUND_Y);
+
+    for (const p of platforms) {
+      if (p.type === 'ground') {
+        ctx.fillStyle = lvl.theme === 'underground' ? '#1e3a8a' : (lvl.theme === 'castle' ? '#3f3f46' : '#334155');
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = lvl.theme === 'castle' ? '#ef4444' : '#64748b';
+        ctx.fillRect(p.x, p.y, p.w, 8);
+      } else if (p.type === 'ceiling') {
+        ctx.fillStyle = '#1d4ed8';
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.strokeStyle = '#93c5fd';
+        ctx.strokeRect(p.x, p.y, p.w, p.h);
+      } else if (p.type === 'cabinet') {
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.strokeStyle = '#1e293b';
+        ctx.strokeRect(p.x, p.y, p.w, p.h);
+      } else if (p.type === 'desk') {
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(p.x, p.y, p.w, 5);
+      } else {
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+      }
+    }
+
+    for (const wp of warpPipes) {
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(wp.x, wp.y, wp.w, wp.h);
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(wp.x - 4, wp.y, wp.w + 8, 16);
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(wp.label, wp.x - 8, wp.y - 10);
+    }
+
+    for (const b of bridgeBlocks) {
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(b.x, b.y, b.w - 2, b.h);
+    }
+
+    if (goldenSwitch) {
+      ctx.fillStyle = goldenSwitch.pressed ? '#16a34a' : '#fbbf24';
+      ctx.fillRect(goldenSwitch.x, goldenSwitch.y, goldenSwitch.w, goldenSwitch.h);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('6:00 PM', goldenSwitch.x - 3, goldenSwitch.y - 6);
+    }
+
+    for (const ch of movingChairs) {
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(ch.x, ch.y, ch.w, ch.h);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(ch.x + 4, ch.y + 2, ch.w - 8, 5);
+    }
+
+    for (const qb of qBlocks) {
+      const by = qb.y - qb.bounce;
+      ctx.fillStyle = qb.hit ? '#64748b' : (qb.golden ? '#facc15' : '#f59e0b');
+      ctx.fillRect(qb.x, by, qb.w, qb.h);
+      if (qb.golden && !qb.hit) {
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(qb.x, by, qb.w, qb.h);
+      }
+      if (!qb.hit) {
+        ctx.fillStyle = qb.golden ? '#090d16' : '#fff';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText(qb.golden ? '!' : '?', qb.x + 11, by + 25);
+      }
+    }
+
+    // Carpetas Confidenciales Doradas (📁)
+    for (const fl of folders) {
+      if (fl.collected) continue;
+      const floatY = Math.sin(performance.now() * 0.005 + fl.x) * 3;
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(fl.x, fl.y + floatY + 4, fl.w, fl.h - 4);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(fl.x, fl.y + floatY, 12, 5);
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(fl.x, fl.y + floatY + 4, fl.w, fl.h - 4);
+      ctx.fillStyle = '#78350f';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.fillText('TOP', fl.x + 5, fl.y + floatY + 17);
+    }
+
+    for (const it of items) {
+      ctx.fillStyle = it.type === 'coffee' ? '#ffffff' : (it.type === 'energy' ? '#facc15' : '#16a34a');
+      ctx.fillRect(it.x + 2, it.y + 4, 24, 22);
+      ctx.fillStyle = it.type === 'coffee' ? '#78350f' : (it.type === 'energy' ? '#090d16' : '#ffffff');
+      ctx.font = 'bold 8px sans-serif';
+      const label = it.type === 'coffee' ? 'CAFÉ' : (it.type === 'energy' ? '⚡MAX' : 'INK');
+      ctx.fillText(label, it.x + 3, it.y + 18);
+    }
+
+    for (const fb of firebars) {
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(fb.x, fb.y, 7, 0, Math.PI * 2);
+      ctx.fill();
+      for (let step = 1; step <= 4; step++) {
+        const dist = (fb.radius / 4) * step;
+        const fx = fb.x + Math.cos(fb.angle) * dist;
+        const fy = fb.y + Math.sin(fb.angle) * dist;
+        ctx.fillStyle = step % 2 === 0 ? '#ef4444' : '#f97316';
+        ctx.beginPath();
+        ctx.arc(fx, fy, 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (const en of enemies) {
+      if (!en.alive) continue;
+      if (en.type === 'paper') {
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(en.x, en.y, en.w, en.h);
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(en.x + 6, en.y + 10, 5, 5);
+        ctx.fillRect(en.x + 20, en.y + 10, 5, 5);
+      } else {
+        ctx.fillStyle = en.state === 'stopped' ? '#fbbf24' : '#64748b';
+        ctx.fillRect(en.x, en.y + 6, en.w, en.h - 6);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(en.x + 5, en.y + 12, en.w - 10, 10);
+      }
+    }
+
+    for (const pp of paperPlanes) {
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillRect(pp.x, pp.y, pp.w, pp.h);
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'bold 9px sans-serif';
+      ctx.fillText('AUDITORÍA', pp.x - 4, pp.y - 3);
+    }
+
+    if (boss && boss.alive) drawBoss();
+
+    for (const st of stamps) {
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(st.x, st.y, st.w, st.h);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.fillText('OK', st.x + 6, st.y + 11);
+    }
+
+    drawExitAndHouse(lvl.goalX, lvl.hasHouse);
+
+    if (endingSeq.tieFlying) {
+      ctx.save();
+      ctx.translate(endingSeq.tieX, endingSeq.tieY);
+      ctx.rotate(endingSeq.tieAngle);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(-3, -10, 6, 20);
+      ctx.restore();
+    }
+
+    // Estelas de Dash y Bebida Energética
+    for (const ai of afterimages) {
+      ctx.fillStyle = ai.color;
+      ctx.fillRect(ai.x, ai.y, dino.w, dino.h);
+    }
+
+    if (dino.visible) drawDino();
+
+    // Capa de Diagnóstico (Hitboxes, Vectores y Coyote Time)
+    if (debugMode) {
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(dino.x, dino.y, dino.w, dino.h);
+      ctx.beginPath();
+      ctx.moveTo(dino.x + dino.w / 2, dino.y + dino.h / 2);
+      ctx.lineTo(dino.x + dino.w / 2 + dino.vx * 8, dino.y + dino.h / 2 + dino.vy * 5);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#ff0055';
+      for (const en of enemies) {
+        if (en.alive) ctx.strokeRect(en.x, en.y, en.w, en.h);
+      }
+      ctx.strokeStyle = '#38bdf8';
+      for (const ch of movingChairs) {
+        ctx.strokeRect(ch.x, ch.y, ch.w, ch.h);
+      }
+    }
+
+    for (const p of particles) {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    }
+    for (const ft of floatingTexts) {
+      ctx.fillStyle = ft.color;
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText(ft.text, ft.x, ft.y);
+    }
+
+    ctx.restore();
+    drawHUD();
+  }
+
+  function drawBiometricGate(x, y, label, color) {
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(x, y, 12, 120);
+    ctx.fillRect(x + 74, y, 12, 120);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(x - 10, y - 24, 108, 26);
+    ctx.strokeStyle = color;
+    ctx.strokeRect(x - 10, y - 24, 108, 26);
+    ctx.fillStyle = color;
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillText(label, x - 4, y - 7);
+  }
+
+  function drawLunchZone(x, groundY) {
+    ctx.fillStyle = '#065f46';
+    ctx.fillRect(x, groundY - 110, 128, 22);
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillText('☕ REFRIGERIO 1:00 PM', x + 6, groundY - 95);
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(x + 10, groundY - 88, 7, 88);
+    ctx.fillRect(x + 110, groundY - 88, 7, 88);
+  }
+
+  function drawBoss() {
+    if (boss.shielded) {
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(boss.x - 6, boss.y - 6, boss.w + 12, boss.h + 12);
+    }
+    ctx.fillStyle = '#1e1b4b';
+    ctx.fillRect(boss.x, boss.y + 18, boss.w, boss.h - 18);
+    ctx.fillStyle = '#fca5a5';
+    ctx.fillRect(boss.x + 10, boss.y, boss.w - 20, 24);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillRect(boss.x + 26, boss.y + 26, 10, 28);
+
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillStyle = boss.shielded ? '#fca5a5' : '#4ade80';
+    ctx.fillText(boss.shielded ? '🛡️ EN REUNIÓN (INMUNE)' : '💦 ¡VULNERABLE! ATACA', boss.x - 28, boss.y - 12);
+
+    for (const pr of boss.projectiles) {
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(pr.x, pr.y, pr.w, pr.h);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.fillText(pr.label, pr.x + 3, pr.y + 12);
+    }
+  }
+
+  function drawExitAndHouse(goalX, hasHouse) {
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(goalX, 110, 6, GROUND_Y - 110);
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(goalX + 6, endingSeq.flagY, 62, 30);
+    ctx.fillStyle = '#052e16';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillText('6:00 PM', goalX + 14, endingSeq.flagY + 19);
+
+    if (hasHouse) {
+      const hx = goalX + 150;
+      const hy = GROUND_Y - 125;
+      ctx.fillStyle = '#fef3c7';
+      ctx.fillRect(hx, hy + 35, 130, 90);
+      ctx.fillStyle = '#b91c1c';
+      ctx.beginPath();
+      ctx.moveTo(hx - 14, hy + 35);
+      ctx.lineTo(hx + 65, hy - 15);
+      ctx.lineTo(hx + 144, hy + 35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(hx + 22, hy + 68, 34, 57);
+      ctx.fillStyle = endingSeq.houseLightOn ? '#fde047' : '#334155';
+      ctx.fillRect(hx + 74, hy + 62, 38, 36);
+    }
+  }
+
+  function drawDino() {
+    if (dino.invulnerable > 0 && Math.floor(dino.invulnerable / 4) % 2 === 1) return;
+    ctx.save();
+    // Anclar Squash & Stretch desde la base de los pies del Dino
+    ctx.translate(dino.x + dino.w / 2, dino.y + dino.h);
+    ctx.scale(dino.dir * dino.scaleX, dino.scaleY);
+    ctx.translate(0, -dino.h / 2);
+
+    const x = -dino.w / 2;
+    const y = -dino.h / 2;
+
+    // Aura arcoíris si tiene Bebida Energética Dorada activa
+    if (dino.invincibleTimer > 0) {
+      const auraColors = ['#ef4444', '#fbbf24', '#22c55e', '#38bdf8', '#a855f7'];
+      ctx.strokeStyle = auraColors[Math.floor(performance.now() / 60) % auraColors.length];
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x - 4, y - 4, dino.w + 8, dino.h + 8);
+    }
+
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(x - 8, y + 24, 10, 10);
+    ctx.fillStyle = dino.senior ? '#0f172a' : '#f8fafc';
+    ctx.fillRect(x + 4, y + 18, 24, 20);
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(x + 6, y, 26, 16);
+
+    // Mandíbula expresiva (se abre al lanzar sello, hacer Dash o festejar)
+    const jawDrop = dino.jawOpenTimer > 0 || endingSeq.tieFlying ? 3 : 0;
+    ctx.fillStyle = '#15803d';
+    ctx.fillRect(x + 16, y + 14 + jawDrop, 16, 4);
+
+    if (dino.senior) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(x + 17, y + 4, 14, 6);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(x + 23, y + 5, 5, 3);
+    } else {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(x + 21, y + 4, 4, 4);
+    }
+
+    if (!endingSeq.tieFlying) {
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(x + 17, y + 19, 6, 14);
+    }
+
+    // Gotas de sudor si quedan menos de 30 segundos en el reloj
+    const remSecs = MAX_WORKDAY_SECS - workdayTimer;
+    if (remSecs < 30 && gameState === 'PLAYING' && Math.floor(performance.now() / 200) % 2 === 0) {
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(x + 2, y + 2, 3, 6);
+    }
+
+    const legLift = dino.onGround ? Math.sin(dino.animFrame * 2) * 3.5 : -3;
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(x + 7, y + 38, 7, 8 + legLift);
+    ctx.fillRect(x + 18, y + 38, 7, 8 - legLift);
+    ctx.restore();
+  }
+
+  function drawHUD() {
+    const lvl = LEVELS[currentLevelIdx];
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+    ctx.fillRect(10, 8, W - 20, 40);
+    ctx.strokeStyle = dino.invincibleTimer > 0 ? '#fbbf24' : '#334155';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(10, 8, W - 20, 40);
+
+    const remainingSecs = Math.max(0, Math.ceil(MAX_WORKDAY_SECS - workdayTimer));
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(`🏢 ${lvl.id} ${lvl.name}`, 16, 32);
+
+    ctx.fillStyle = remainingSecs < 30 ? '#ef4444' : '#38bdf8';
+    ctx.fillText(`⏳ ${remainingSecs}s`, 182, 32);
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillText('TINTA:', 236, 32);
+    for (let i = 0; i < dino.maxInk; i++) {
+      ctx.fillStyle = i < dino.ink ? '#22c55e' : '#334155';
+      ctx.fillRect(280 + i * 12, 20, 9, 14);
+    }
+
+    // Carpetas Confidenciales del Nivel (📁 0/3)
+    ctx.fillStyle = '#fde047';
+    ctx.fillText(`📁 ${foldersCollectedInLevel}/3`, 352, 32);
+
+    // Estado Dash / Invencible / Rango
+    if (dino.invincibleTimer > 0) {
+      ctx.fillStyle = '#facc15';
+      ctx.fillText(`⚡ MAX ${(dino.invincibleTimer / 60).toFixed(1)}s`, 408, 32);
+    } else {
+      ctx.fillStyle = dino.dashCooldown <= 0 ? '#38bdf8' : '#64748b';
+      ctx.fillText(dino.dashCooldown <= 0 ? '⚡ DASH OK' : '⚡ ...', 408, 32);
+    }
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText(`💰 $${score.toLocaleString('en-US')}`, 492, 32);
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(`🏆 $${Math.max(score, saveData.highScore).toLocaleString('en-US')}`, 594, 32);
+    ctx.fillStyle = '#f87171';
+    ctx.fillText(`❤️ x${lives}`, 714, 32);
+
+    if (debugMode) {
+      ctx.fillStyle = '#4ade80';
+      ctx.font = 'bold 10px monospace';
+      ctx.fillText(`${Math.round(fpsTracker)}FPS | Coy:${Math.round(dino.coyoteTimer)} Buf:${Math.round(dino.jumpBufferTimer)}`, 630, 62);
+    }
+  }
+
+  // ==========================================
+  // 8. MODALES, RÉCORDS Y EXPORTADOR GOOGLE SITES
+  // ==========================================
+  const overlayModal = document.getElementById('overlay-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const modalDesc = document.getElementById('modal-desc');
+  const modalStats = document.getElementById('modal-stats');
+  const btnModalAction = document.getElementById('btn-modal-action');
+
+  function showModal(title, desc, btnText, callback) {
+    clearInputs();
+    saveRecords(score, currentLevelIdx, foldersCollectedInLevel);
+    gameState = 'PAUSED';
+    modalTitle.textContent = title;
+    modalDesc.textContent = desc;
+    modalStats.innerHTML = `
+      <div class="stats-row"><span>Nivel Actual:</span><span>${LEVELS[currentLevelIdx].id} - ${LEVELS[currentLevelIdx].name}</span></div>
+      <div class="stats-row"><span>Carpetas Confidenciales (Nivel / Total):</span><span>📁 ${foldersCollectedInLevel}/3 (Total: ${getTotalSavedFolders()}/12)</span></div>
+      <div class="stats-row"><span>Refrigerio Respetado (1:00 PM):</span><span>${lunchBonusAwarded ? '✅ Sí (+$500)' : 'En curso'}</span></div>
+      <div class="stats-row"><span>Récord Histórico (High Score):</span><span>🏆 $${saveData.highScore}</span></div>
+      <div class="stats-row"><span>Puntaje de Jornada Actual:</span><span>💰 $${score}</span></div>
+    `;
+    btnModalAction.textContent = btnText;
+    btnModalAction.onclick = () => {
+      overlayModal.classList.remove('visible');
+      gameState = 'PLAYING';
+      if (callback) callback();
+      canvas.focus();
+    };
+    overlayModal.classList.add('visible');
+  }
+
+  function togglePause() {
+    if (gameState === 'ENDING' || gameState === 'VICTORY') return;
+    if (gameState === 'PLAYING') {
+      showModal(
+        '☕ JORNADA EN PAUSA (v4.0 DELUXE)',
+        'Controles: Flechas/WASD para moverte, Espacio para Salto (con Coyote Time), X/Shift para Sello, y C/Z para Dash Ejecutivo (⚡). Compatible con mandos USB/Bluetooth.',
+        'CONTINUAR JORNADA',
+        null
+      );
+    } else if (gameState === 'PAUSED') {
+      overlayModal.classList.remove('visible');
+      gameState = 'PLAYING';
+      canvas.focus();
+    }
+  }
+
+  // Botones de la Barra Superior
+  document.getElementById('btn-debug').addEventListener('click', (e) => {
+    debugMode = !debugMode;
+    e.currentTarget.classList.toggle('active-mode', debugMode);
+  });
+
+  document.getElementById('btn-sim-mobile').addEventListener('click', (e) => {
+    const ws = document.getElementById('app-workspace');
+    ws.classList.toggle('simulated-mobile-frame');
+    e.currentTarget.classList.toggle('active-mode', ws.classList.contains('simulated-mobile-frame'));
+    setTimeout(fitCanvas, 50);
+  });
+
+  document.getElementById('btn-music').addEventListener('click', (e) => {
+    initAudio();
+    musicEnabled = !musicEnabled;
+    saveAudioPrefs();
+    e.currentTarget.textContent = musicEnabled ? '🎵 Música' : '🎵 Off';
+    e.currentTarget.classList.toggle('active-mode', musicEnabled);
+  });
+
+  document.getElementById('btn-mute').addEventListener('click', (e) => {
+    initAudio();
+    sfxMuted = !sfxMuted;
+    saveAudioPrefs();
+    e.currentTarget.textContent = sfxMuted ? '🔇 SFX Off' : '🔊 SFX';
+    e.currentTarget.classList.toggle('active-mode', !sfxMuted);
+  });
+
+  document.getElementById('btn-pause').addEventListener('click', togglePause);
+
+  // Exportador a Google Sites
+  const sitesModal = document.getElementById('sites-modal');
+  const sitesCodeBox = document.getElementById('sites-code-box');
+  document.getElementById('btn-sites').addEventListener('click', () => {
+    clearInputs();
+    gameState = 'PAUSED';
+    sitesCodeBox.value = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    sitesModal.classList.add('visible');
+  });
+  document.getElementById('btn-copy-sites').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    let copied = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(sitesCodeBox.value);
+        copied = true;
+      }
+    } catch (err) {}
+    if (!copied) {
+      try {
+        sitesCodeBox.select();
+        copied = document.execCommand('copy');
+      } catch (err) {}
+    }
+    btn.textContent = copied ? '✅ ¡Código Copiado!' : '⚠️ Selecciona y Ctrl+C';
+    setTimeout(() => { btn.textContent = '📋 Copiar Código'; }, 2000);
+  });
+  document.getElementById('btn-close-sites').addEventListener('click', () => {
+    sitesModal.classList.remove('visible');
+    gameState = 'PLAYING';
+    canvas.focus();
+  });
+
+  // ==========================================
+  // 9. BUCLE PRINCIPAL CON DELTA-TIME (60Hz / 120Hz)
+  // ==========================================
+  window.onload = () => {
+    fitCanvas();
+    buildLevel(true, true);
+    draw();
+    showModal(
+      '🦖 DINOCORP v4.1 DELUXE',
+      'Llega a casa antes de las 6:00 PM. Usa Flechas/WASD, Espacio para Saltar, X/Shift para Sello y C/Z para Dash Ejecutivo (⚡).',
+      '▶ INICIAR JORNADA',
+      () => { initAudio(); }
+    );
+
+    let lastTime = performance.now();
+    function gameLoop(now) {
+      const elapsedMs = Math.max(1, now - lastTime);
+      lastTime = now;
+      fpsTracker = fpsTracker * 0.9 + (1000 / elapsedMs) * 0.1;
+      const dt = Math.min(Math.max(elapsedMs / 16.6667, 0.1), 2.5);
+
+      update(dt);
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,903 +1,700 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Oficina 80s: Carrera hacia las Vacaciones</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Hub · Colección de Juegos Web</title>
+    <meta name="description" content="Portada central de juegos web interactivos. Cada título se ejecuta de forma aislada en su propia carpeta y fila dedicada.">
+    <meta property="og:title" content="Arcade Hub · Colección de Juegos Web">
+    <meta property="og:description" content="Explora y juega mi colección de juegos web retro y experimentales. Cada juego corre en su propio módulo independiente.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ramses-cn.github.io/Linkedin/">
+    <meta property="og:image" content="https://ramses-cn.github.io/Linkedin/assets/og-cover.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Arcade Hub · Colección de Juegos Web">
+    <meta name="twitter:description" content="3 juegos web corporativos en su propia fila independiente.">
+    <meta name="twitter:image" content="https://ramses-cn.github.io/Linkedin/assets/og-cover.png">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕹️</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        html, body { overscroll-behavior: none; }
-        .font-arcade { font-family: 'Press Start 2P', monospace; }
-        .font-sans { font-family: 'Inter', sans-serif; }
-        canvas {
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            touch-action: none;
-            -webkit-tap-highlight-color: transparent;
+        :root {
+            --bg-main: #020617;
+            --bg-surface: #0f172a;
+            --bg-elevated: #1e293b;
+            --border-subtle: rgba(148, 163, 184, 0.16);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --gold: #facc15;
+            --emerald: #34d399;
         }
-        .dpad-btn {
-            touch-action: none;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-user-select: none;
-            user-select: none;
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 25px rgba(234, 179, 8, 0.4); }
-            50% { box-shadow: 0 0 45px rgba(234, 179, 8, 0.8); }
+
+        html, body {
+            min-height: 100%;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
-        .arcade-cabinet {
-            animation: pulse-glow 4s infinite ease-in-out;
-            --chrome: 200px; /* header + footer + paddings, subtracted from viewport height */
-            width: min(100%, calc((100dvh - var(--chrome)) * 16 / 9));
-            min-width: min(100%, 320px);
+
+        body {
+            display: flex;
+            flex-direction: column;
+            background-image:
+                radial-gradient(circle at 15% 0%, rgba(250, 204, 21, 0.08), transparent 36%),
+                radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.08), transparent 36%),
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.35), transparent 280px);
         }
-        .portrait .arcade-cabinet { width: 100%; }
-        .touch-only { display: none; }
-        .dpad-grid { width: 9.5rem; height: 9.5rem; }
-        @media (pointer: coarse) {
-            .touch-only { display: flex; }
-            .arcade-cabinet { --chrome: 400px; animation: none; box-shadow: 0 0 25px rgba(234,179,8,.4); }
+
+        .font-arcade {
+            font-family: 'Press Start 2P', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         }
-        /* Phone in landscape: hide chrome, float D-pad over the sides */
-        @media (pointer: coarse) and (max-height: 500px) {
-            header, footer { display: none !important; }
-            main { padding: 4px !important; }
-            .arcade-cabinet { --chrome: 44px; }
-            .touch-only { position: fixed; left: max(8px, env(safe-area-inset-left)); bottom: 8px; z-index: 40; background: transparent; border: 0; padding: 0; opacity: .75; }
-            .touch-only .hint { display: none; }
-            .dpad-grid { width: 7.5rem; height: 7.5rem; }
+
+        .container {
+            width: 100%;
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 0 1.25rem;
         }
-        @media (min-width: 1024px) { .hud { font-size: 14px !important; } }
+
+        /* Header / Hero */
+        .hub-header {
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(12px);
+            padding: 2rem 0 1.75rem;
+        }
+
+        .hero-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+        }
+
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 0.9rem;
+            display: grid;
+            place-items: center;
+            font-size: 1.75rem;
+            background: linear-gradient(135deg, rgba(250, 204, 21, 0.16), rgba(56, 189, 248, 0.14));
+            border: 1px solid rgba(250, 204, 21, 0.35);
+            box-shadow: 0 0 24px rgba(250, 204, 21, 0.12);
+            flex-shrink: 0;
+        }
+
+        .hub-title {
+            font-size: clamp(1rem, 2.6vw, 1.45rem);
+            color: var(--gold);
+            letter-spacing: 0.04em;
+            line-height: 1.35;
+        }
+
+        .hub-subtitle {
+            margin-top: 0.45rem;
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+            max-width: 60ch;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .share-hub-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.6rem 0.95rem;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: #7dd3fc;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .share-hub-btn:hover {
+            background: rgba(56, 189, 248, 0.22);
+            border-color: rgba(56, 189, 248, 0.7);
+            transform: translateY(-1px);
+        }
+
+        .stats-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 1rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(52, 211, 153, 0.32);
+            color: var(--emerald);
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .stats-dot {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 50%;
+            background: var(--emerald);
+            box-shadow: 0 0 10px var(--emerald);
+        }
+
+        /* Main Catalog */
+        main {
+            flex: 1;
+            padding: 2rem 0 3rem;
+        }
+
+        .section-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .isolation-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Strict 1-game-per-row vertical stack */
+        .games-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            width: 100%;
+        }
+
+        .game-row {
+            --accent: #facc15;
+            --accent-rgb: 250, 204, 21;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 120px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.35rem 1.5rem;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.82));
+            border: 1px solid rgba(var(--accent-rgb), 0.28);
+            box-shadow: 0 10px 30px rgba(2, 6, 23, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .game-row:hover {
+            transform: translateY(-2px);
+            border-color: rgba(var(--accent-rgb), 0.65);
+            box-shadow: 0 14px 36px rgba(2, 6, 23, 0.7), 0 0 28px rgba(var(--accent-rgb), 0.14);
+        }
+
+        /* Left Emblem Box */
+        .game-emblem {
+            width: 120px;
+            height: 112px;
+            border-radius: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            background: radial-gradient(circle at top, rgba(var(--accent-rgb), 0.18), rgba(2, 6, 23, 0.85));
+            border: 1px solid rgba(var(--accent-rgb), 0.35);
+            position: relative;
+        }
+
+        .game-num {
+            font-size: 0.65rem;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+        }
+
+        .game-icon {
+            font-size: 2.35rem;
+            line-height: 1;
+        }
+
+        /* Center Info Block */
+        .game-info {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .game-title-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .game-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border: 1px solid var(--border-subtle);
+            background: rgba(30, 41, 59, 0.75);
+            color: var(--text-secondary);
+        }
+
+        .pill-version {
+            color: var(--accent);
+            border-color: rgba(var(--accent-rgb), 0.35);
+            background: rgba(var(--accent-rgb), 0.1);
+        }
+
+        .pill-record {
+            color: var(--emerald);
+            border-color: rgba(52, 211, 153, 0.35);
+            background: rgba(52, 211, 153, 0.1);
+        }
+
+        .game-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem 1rem;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .game-desc {
+            font-size: 0.92rem;
+            color: #cbd5e1;
+            max-width: 72ch;
+        }
+
+        .game-footer-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.45rem;
+            margin-top: 0.15rem;
+        }
+
+        .folder-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.74rem;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            padding: 0.18rem 0.55rem;
+            border-radius: 0.4rem;
+        }
+
+        /* Right Action Column */
+        .game-action {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .play-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.95rem 1.45rem;
+            border-radius: 0.8rem;
+            background: var(--accent);
+            color: #020617;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.28);
+            transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .play-btn:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 26px rgba(var(--accent-rgb), 0.4);
+        }
+
+        .play-btn:focus-visible {
+            outline: 3px solid #38bdf8;
+            outline-offset: 3px;
+        }
+
+        /* Placeholder Next-Slot Row */
+        .slot-row {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            border-radius: 1rem;
+            border: 1.5px dashed rgba(148, 163, 184, 0.28);
+            background: rgba(15, 23, 42, 0.4);
+            color: var(--text-secondary);
+        }
+
+        .slot-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .slot-badge {
+            padding: 0.55rem 0.8rem;
+            border-radius: 0.65rem;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+        }
+
+        .slot-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .slot-desc {
+            font-size: 0.84rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+
+        .hub-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 1.25rem 0;
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        /* Narrow screens: stack internally inside the card while keeping strictly 1 game per row */
+        @media (max-width: 720px) {
+            .hub-header {
+                padding: 1.5rem 0 1.25rem;
+            }
+
+            .game-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 1.15rem;
+            }
+
+            .game-emblem {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: flex-start;
+                padding: 0.75rem 1rem;
+                gap: 0.85rem;
+            }
+
+            .game-icon {
+                font-size: 1.75rem;
+            }
+
+            .game-action {
+                align-items: stretch;
+            }
+
+            .play-btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-full flex flex-col justify-between font-sans select-none overflow-x-hidden">
+<body>
 
-    <header class="bg-slate-900 border-b border-slate-800 py-2 px-3 sm:py-3 sm:px-4 shadow-lg shrink-0">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <span class="text-xl">💼</span>
+    <header class="hub-header">
+        <div class="container hero-bar">
+            <div class="brand-wrap">
+                <div class="brand-icon" aria-hidden="true">🕹️</div>
                 <div>
-                    <h1 class="font-arcade text-[10px] sm:text-xs md:text-sm text-yellow-400">OFICINA ARCADE 1984</h1>
-                    <p class="text-[9px] sm:text-[10px] text-slate-400 hidden sm:block">Alcanza la meta de ingresos para ascender</p>
+                    <h1 class="hub-title font-arcade">ARCADE HUB</h1>
+                    <p class="hub-subtitle">
+                        Colección interactiva de juegos web · Cada juego vive en su propia fila y módulo independiente para no interferir entre sí.
+                    </p>
                 </div>
             </div>
-            <div class="flex items-center gap-2 sm:gap-3">
-                <div class="hidden sm:block text-xs font-arcade text-yellow-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                    RÉCORD: $<span id="highScoreVal">0</span>
+            <div class="hero-actions">
+                <div class="stats-pill" id="statsPill">
+                    <span class="stats-dot" aria-hidden="true"></span>
+                    <span id="gamesCountText">Cargando catálogo...</span>
                 </div>
-                <button onclick="toggleAudio()" id="soundBtn" class="bg-slate-800 hover:bg-slate-700 text-[10px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer">
-                    🔊 <span id="soundStatus">ON</span>
+                <button type="button" class="share-hub-btn" id="shareHubBtn" title="Copiar enlace del Arcade Hub para compartir en LinkedIn">
+                    🔗 Compartir Hub
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow flex flex-col items-center justify-center p-2 md:p-4 max-w-6xl mx-auto w-full min-h-0" style="padding-bottom:max(0.5rem, env(safe-area-inset-bottom))">
-        <div class="bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl relative flex flex-col arcade-cabinet">
-
-            <!-- HUD Bar -->
-            <div class="bg-slate-950 px-2 sm:px-4 py-2 sm:py-2.5 border-b border-slate-800 flex justify-between items-center text-[9px] sm:text-xs font-arcade hud">
-                <div class="text-emerald-400">$<span id="scoreVal">0</span>/<span id="targetVal" class="text-amber-400">2500</span></div>
-                <div class="text-blue-400">PISO <span id="levelVal">1</span>/5</div>
-                <div class="text-red-400"><span id="livesVal">❤️❤️❤️</span></div>
+    <main>
+        <div class="container">
+            <div class="section-head">
+                <span class="section-label">Catálogo de juegos (1 juego por fila)</span>
+                <span class="isolation-note">Aislamiento por carpeta: <code>games/&lt;juego&gt;/</code></span>
             </div>
 
-            <!-- Canvas Container (fixed 16:9 to match internal resolution, no distortion) -->
-            <div id="stage" class="relative w-full bg-slate-900 overflow-hidden" style="aspect-ratio:16/9">
-                <canvas id="gameCanvas" class="w-full h-full block"></canvas>
-
-                <!-- Start Overlay Modal -->
-                <div id="startScreen" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-20 overflow-y-auto">
-                    <div class="text-2xl sm:text-4xl mb-1 sm:mb-3 animate-bounce">👔 💰 ☕</div>
-                    <h2 class="font-arcade text-base sm:text-lg md:text-xl text-yellow-400 mb-2">LA CARRERA CORPORATIVA</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-300 max-w-md mb-4 sm:mb-5 leading-relaxed max-[480px]:hidden">
-                        Recolecta sobres de pago <span class="text-emerald-400 font-bold">($)</span> y café <span class="text-amber-500 font-bold">(☕)</span>, esquiva la burocracia <span class="text-red-400 font-bold">(📑)</span>.
-                        Cada piso exige un <span class="text-amber-400 font-bold">mínimo de ingresos</span> para pasar al siguiente nivel y llegar a tus <span class="text-yellow-400 font-bold">Vacaciones en la Playa</span>.
-                    </p>
-                    <div class="bg-slate-900 border border-slate-700 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-[11px] text-slate-400 mb-3 sm:mb-6 space-y-1 shadow-inner max-[480px]:hidden">
-                        <p>💻 <b>PC:</b> Flechas / WASD para moverte</p>
-                        <p>📱 <b>Móvil:</b> Botones virtuales o desliza el dedo sobre el juego</p>
-                    </div>
-                    <button onclick="startGame()" class="font-arcade bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-[11px] sm:text-xs font-bold shadow-lg transition transform active:scale-95 cursor-pointer">
-                        ▶ COMENZAR JUEGO
-                    </button>
-                </div>
-
-                <!-- Level Up / Transition Modal -->
-                <div id="levelModal" class="absolute inset-0 bg-slate-950/92 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-20 hidden">
-                    <h2 id="levelModalTitle" class="font-arcade text-base sm:text-xl text-emerald-400 mb-2">¡META CUMPLIDA!</h2>
-                    <p id="levelModalDesc" class="text-[11px] sm:text-xs text-slate-300 mb-5 sm:mb-6">Has alcanzado el mínimo de ingresos requerido. Ascendiendo al siguiente piso...</p>
-                    <button onclick="nextLevel()" class="font-arcade bg-blue-600 hover:bg-blue-500 text-white px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-[11px] sm:text-xs font-bold shadow-lg transition cursor-pointer">
-                        SUBIR DE PISO ➔
-                    </button>
-                </div>
-
-                <!-- Vacation Celebration Modal (Level 5 Completed) with Social Share -->
-                <div id="vacationModal" class="absolute inset-0 bg-gradient-to-b from-blue-950/98 to-slate-950/98 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-30 hidden overflow-y-auto">
-                    <div class="text-3xl sm:text-4xl mb-1 animate-bounce">🏖️ 🍹 🌴</div>
-                    <h2 class="font-arcade text-sm sm:text-base md:text-xl text-yellow-300 mb-1">¡VACACIONES EN LA PLAYA!</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-200 max-w-md mb-3 leading-relaxed">
-                        ¡Has completado con éxito los 5 niveles corporativos cumpliendo todas las metas de ingresos! Disfruta de la cabaña, el sol y tu rumita de dinero.
-                    </p>
-
-                    <div class="bg-slate-900/90 border border-yellow-500/50 p-3 rounded-xl text-xs text-yellow-200 mb-4 font-arcade shadow-lg max-w-sm w-full">
-                        <p class="text-[10px] text-slate-400 mb-1">ESTADÍSTICAS FINALES</p>
-                        <p class="text-emerald-400 text-sm mb-1">INGRESOS TOTALES: $<span id="vacationScore">0</span></p>
-                        <p class="text-blue-300 text-[10px]">¡EMPLEADO DEL AÑO CONDECORADO!</p>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row gap-2 w-full max-w-xs justify-center">
-                        <button onclick="generateShareCard()" class="font-arcade bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-3 rounded-xl text-[10px] font-bold shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
-                            📸 DESCARGAR TARJETA
-                        </button>
-                        <button onclick="restartGame()" class="font-arcade bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-3 rounded-xl text-[10px] font-bold shadow-lg transition cursor-pointer">
-                            🔄 JUGAR OTRA VEZ
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Game Over Modal -->
-                <div id="gameOverScreen" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-20 hidden">
-                    <h2 class="font-arcade text-base sm:text-xl text-red-500 mb-2">¡DESPEDIDO! (GAME OVER)</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-300 mb-4">No alcanzaste la meta en el piso <span id="failLevel">1</span> o te quedaste sin vidas. Ingresos acumulados: $<span id="finalScore">0</span></p>
-                    <button onclick="startGame()" class="font-arcade bg-blue-600 hover:bg-blue-500 text-white px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-[11px] sm:text-xs font-bold shadow-lg transition cursor-pointer">
-                        🔄 INTENTAR NUEVAMENTE
-                    </button>
-                </div>
-            </div>
-
-            <!-- Virtual D-Pad for Mobile -->
-            <div class="touch-only bg-slate-950 p-3 border-t border-slate-800 justify-between items-center">
-                <div class="dpad-grid grid grid-cols-3 grid-rows-3 gap-1.5">
-                    <div></div>
-                    <button data-dir="UP" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">⬆️</button>
-                    <div></div>
-                    <button data-dir="LEFT" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">⬅️</button>
-                    <div></div>
-                    <button data-dir="RIGHT" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">➡️</button>
-                    <div></div>
-                    <button data-dir="DOWN" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">⬇️</button>
-                    <div></div>
-                </div>
-                <div class="hint text-right text-[10px] text-slate-400 space-y-1 pr-2">
-                    <p class="text-yellow-400 font-bold">CONTROLES TÁCTILES</p>
-                    <p>Mantén presionado</p>
-                    <p>o desliza el dedo</p>
-                </div>
-            </div>
-
+            <div id="gamesList" class="games-stack" aria-live="polite"></div>
         </div>
     </main>
 
-    <footer class="bg-slate-900 border-t border-slate-800 text-center py-2 sm:py-3 text-[10px] sm:text-xs text-slate-500 shrink-0 hidden sm:block">
-        Oficina 1984 Arcade • Metas de Ingresos por Piso & Modo Vacaciones
+    <footer class="hub-footer">
+        <div class="container">
+            Arcade Hub · Cada proyecto mantiene su propio HTML, estilos, estado y controles independientes.
+        </div>
     </footer>
 
+    <script src="games-registry.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        (function renderCatalog() {
+            const listEl = document.getElementById('gamesList');
+            const countEl = document.getElementById('gamesCountText');
+            const catalog = Array.isArray(window.GAMES_CATALOG) ? window.GAMES_CATALOG : [];
 
-        let V_WIDTH = 800;
-        let V_HEIGHT = 450;
-        canvas.width = V_WIDTH;
-        canvas.height = V_HEIGHT;
+            const playableCount = catalog.filter(g => g && g.status !== 'coming_soon').length;
 
-        // Adapt the play area: wide (800x450) on desktop/landscape, tall on portrait phones
-        let lastLayoutW = 0;
-        function applyLayout() {
-            const portrait = window.innerHeight > window.innerWidth && window.innerWidth < 700;
-            document.documentElement.classList.toggle('portrait', portrait);
-            if (portrait) {
-                const cabW = Math.min(window.innerWidth - 16, 700);
-                const h = id => { const el = document.querySelector(id); return el && el.offsetParent !== null ? el.offsetHeight : 0; };
-                const used = h('header') + h('.hud') + h('.touch-only') + 40;
-                const availH = Math.max(window.innerHeight - used, cabW * 0.9);
-                V_WIDTH = 500;
-                V_HEIGHT = Math.max(400, Math.min(760, Math.round(500 * availH / cabW)));
-            } else {
-                V_WIDTH = 800;
-                V_HEIGHT = 450;
-            }
-            canvas.width = V_WIDTH;
-            canvas.height = V_HEIGHT;
-            document.getElementById('stage').style.aspectRatio = V_WIDTH + '/' + V_HEIGHT;
-            document.querySelector('.arcade-cabinet').style.setProperty('--ar', V_WIDTH / V_HEIGHT);
-            player.x = Math.min(player.x, V_WIDTH - player.width - 15);
-            player.y = Math.min(player.y, V_HEIGHT - player.height - 15);
-            lastLayoutW = window.innerWidth;
-        }
-        window.addEventListener('resize', () => {
-            if (window.innerWidth !== lastLayoutW) { applyLayout(); if (gameState !== 'PLAYING') draw(); }
-        });
-        window.addEventListener('orientationchange', () => setTimeout(() => { applyLayout(); if (gameState !== 'PLAYING') draw(); }, 250));
-
-        let highScore = localStorage.getItem('arcade_highscore') || 0;
-        document.getElementById('highScoreVal').innerText = highScore;
-
-        // Audio setup using Web Audio API
-        let audioCtx = null;
-        let soundEnabled = true;
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        function playSound(type) {
-            if (!soundEnabled || !audioCtx) return;
-            try {
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                const now = audioCtx.currentTime;
-
-                if (type === 'coin') {
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(587.33, now);
-                    osc.frequency.setValueAtTime(880, now + 0.08);
-                    gain.gain.setValueAtTime(0.12, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-                    osc.start(now);
-                    osc.stop(now + 0.22);
-                } else if (type === 'coffee') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.linearRampToValueAtTime(600, now + 0.15);
-                    gain.gain.setValueAtTime(0.15, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                    osc.start(now);
-                    osc.stop(now + 0.25);
-                } else if (type === 'hit') {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.linearRampToValueAtTime(40, now + 0.3);
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
-                } else if (type === 'win') {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(440, now);
-                    osc.frequency.setValueAtTime(554.37, now + 0.1);
-                    osc.frequency.setValueAtTime(659.25, now + 0.2);
-                    osc.frequency.setValueAtTime(880, now + 0.3);
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-                    osc.start(now);
-                    osc.stop(now + 0.6);
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        function toggleAudio() {
-            soundEnabled = !soundEnabled;
-            document.getElementById('soundStatus').innerText = soundEnabled ? 'ON' : 'OFF';
-        }
-
-        // Game State Variables
-        let gameState = 'START';
-        let score = 0;
-        let level = 1;
-        let lives = 3;
-        let targetPay = 2500;
-        let coffeeBoostTimer = 0;
-
-        let player = {
-            x: 100,
-            y: 200,
-            width: 36,
-            height: 48,
-            speed: 5.5,
-            dx: 0,
-            dy: 0,
-            animFrame: 0
-        };
-
-        let paychecks = [];
-        let obstacles = [];
-        let powerups = [];
-        let particles = [];
-        let floatingTexts = [];
-        let spawnTimer = 0;
-
-        const floorNames = [
-            "Piso 1: Cubículos de Operaciones (Meta: $2,500)",
-            "Piso 2: Contabilidad y Finanzas (Meta: $6,000)",
-            "Piso 3: Recursos Humanos (Meta: $10,500)",
-            "Piso 4: Sala de Juntas Directivas (Meta: $16,000)",
-            "Piso 5: Presidencia Ejecutiva (Meta: $22,000)"
-        ];
-
-        const levelTargets = [2500, 6000, 10500, 16000, 22000];
-
-        // ---- INPUT STATE ----
-        // Keyboard state
-        const keys = {};
-        window.addEventListener('keydown', e => {
-            keys[e.key] = true;
-            initAudio();
-        });
-        window.addEventListener('keyup', e => {
-            keys[e.key] = false;
-        });
-
-        // Touch/D-pad state (held direction, read every frame by update())
-        let touchDx = 0;
-        let touchDy = 0;
-
-        function setDir(dir, active) {
-            const s = 1; // sign multiplier, actual speed applied in update()
-            if (dir === 'UP') touchDy = active ? -1 : (touchDy < 0 ? 0 : touchDy);
-            if (dir === 'DOWN') touchDy = active ? 1 : (touchDy > 0 ? 0 : touchDy);
-            if (dir === 'LEFT') touchDx = active ? -1 : (touchDx < 0 ? 0 : touchDx);
-            if (dir === 'RIGHT') touchDx = active ? 1 : (touchDx > 0 ? 0 : touchDx);
-        }
-
-        // Wire up D-pad buttons with Pointer Events (covers touch + mouse + pen uniformly,
-        // avoids the double-fire bug from combining ontouchstart + onmousedown)
-        document.querySelectorAll('.dpad-btn').forEach(btn => {
-            const dir = btn.getAttribute('data-dir');
-
-            const press = (e) => {
-                e.preventDefault();
-                initAudio();
-                setDir(dir, true);
-            };
-            const release = (e) => {
-                e.preventDefault();
-                setDir(dir, false);
-            };
-
-            btn.addEventListener('pointerdown', press);
-            btn.addEventListener('pointerup', release);
-            btn.addEventListener('pointercancel', release);
-            btn.addEventListener('pointerleave', release);
-            btn.addEventListener('contextmenu', e => e.preventDefault());
-        });
-
-        // Swipe-to-move directly on the canvas (also feeds touchDx/touchDy, not player.dx directly,
-        // so it survives update()'s per-frame recalculation)
-        let touchActive = false;
-        let touchStartX = 0;
-        let touchStartY = 0;
-
-        canvas.addEventListener('touchstart', e => {
-            initAudio();
-            touchActive = true;
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-            e.preventDefault();
-        }, { passive: false });
-
-        canvas.addEventListener('touchmove', e => {
-            if (!touchActive) return;
-            const touch = e.touches[0];
-            const diffX = touch.clientX - touchStartX;
-            const diffY = touch.clientY - touchStartY;
-
-            // Analog: the further you drag, the faster (full speed at 60px), with a small dead zone
-            const DEAD = 8, FULL = 60;
-            const ax = Math.abs(diffX), ay = Math.abs(diffY);
-            touchDx = ax > DEAD ? Math.sign(diffX) * Math.min((ax - DEAD) / (FULL - DEAD), 1) : 0;
-            touchDy = ay > DEAD ? Math.sign(diffY) * Math.min((ay - DEAD) / (FULL - DEAD), 1) : 0;
-            e.preventDefault();
-        }, { passive: false });
-
-        function clearCanvasSwipe(e) {
-            touchActive = false;
-            touchDx = 0;
-            touchDy = 0;
-            if (e) e.preventDefault();
-        }
-        canvas.addEventListener('touchend', clearCanvasSwipe, { passive: false });
-        canvas.addEventListener('touchcancel', clearCanvasSwipe, { passive: false });
-
-        function startGame() {
-            initAudio();
-            score = 0;
-            level = 1;
-            lives = 3;
-            targetPay = levelTargets[0];
-            coffeeBoostTimer = 0;
-            touchDx = 0;
-            touchDy = 0;
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('gameOverScreen').classList.add('hidden');
-            document.getElementById('vacationModal').classList.add('hidden');
-            document.getElementById('levelModal').classList.add('hidden');
-
-            resetLevel();
-            gameState = 'PLAYING';
-            startLoop();
-        }
-
-        function resetLevel() {
-            applyLayout();
-            player.x = 80;
-            player.y = V_HEIGHT / 2 - player.height / 2;
-            paychecks = [];
-            obstacles = [];
-            powerups = [];
-            particles = [];
-            floatingTexts = [];
-            spawnTimer = 0;
-
-            updateHUD();
-        }
-
-        function updateHUD() {
-            document.getElementById('scoreVal').innerText = score;
-            document.getElementById('targetVal').innerText = targetPay;
-            document.getElementById('levelVal').innerText = level;
-            let hearts = '';
-            for (let i = 0; i < lives; i++) hearts += '❤️';
-            document.getElementById('livesVal').innerText = hearts;
-        }
-
-        function addFloatingText(text, x, y, color = '#34d399') {
-            floatingTexts.push({ text, x, y, alpha: 1.0, color });
-        }
-
-        function addParticles(x, y, color) {
-            for (let i = 0; i < 8; i++) {
-                particles.push({
-                    x, y,
-                    vx: (Math.random() - 0.5) * 6,
-                    vy: (Math.random() - 0.5) * 6,
-                    alpha: 1.0,
-                    color,
-                    size: Math.random() * 4 + 2
-                });
-            }
-        }
-
-        function nextLevel() {
-            level++;
-            document.getElementById('levelModal').classList.add('hidden');
-            if (level > 5) {
-                gameState = 'VACATION';
-                playSound('win');
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('arcade_highscore', highScore);
-                    document.getElementById('highScoreVal').innerText = highScore;
-                }
-                document.getElementById('vacationScore').innerText = score;
-                document.getElementById('vacationModal').classList.remove('hidden');
-            } else {
-                targetPay = levelTargets[level - 1];
-                resetLevel();
-                gameState = 'PLAYING';
-                startLoop();
-            }
-        }
-
-        function restartGame() {
-            startGame();
-        }
-
-        function generateShareCard() {
-            const shareCanvas = document.createElement('canvas');
-            shareCanvas.width = 1200;
-            shareCanvas.height = 628;
-            const sCtx = shareCanvas.getContext('2d');
-
-            let bgGrad = sCtx.createLinearGradient(0, 0, 1200, 628);
-            bgGrad.addColorStop(0, '#090d16');
-            bgGrad.addColorStop(0.5, '#1e1b4b');
-            bgGrad.addColorStop(1, '#0284c7');
-            sCtx.fillStyle = bgGrad;
-            sCtx.fillRect(0, 0, 1200, 628);
-
-            sCtx.strokeStyle = '#facc15';
-            sCtx.lineWidth = 6;
-            sCtx.strokeRect(40, 40, 1120, 548);
-
-            sCtx.fillStyle = 'rgba(15, 23, 42, 0.95)';
-            sCtx.fillRect(60, 60, 1080, 508);
-
-            sCtx.font = 'bold 34px "Press Start 2P", monospace';
-            sCtx.fillStyle = '#facc15';
-            sCtx.fillText('🏆 ¡MIS VACACIONES GANADAS!', 95, 140);
-
-            sCtx.font = '22px Inter, sans-serif';
-            sCtx.fillStyle = '#94a3b8';
-            sCtx.fillText('Oficina 1984 Arcade - Metas Cumplidas & Éxito Profesional', 95, 190);
-
-            sCtx.fillStyle = '#1e293b';
-            sCtx.fillRect(95, 230, 600, 240);
-            sCtx.strokeStyle = '#334155';
-            sCtx.lineWidth = 2;
-            sCtx.strokeRect(95, 230, 600, 240);
-
-            sCtx.font = 'bold 24px Inter, sans-serif';
-            sCtx.fillStyle = '#38bdf8';
-            sCtx.fillText('📊 ESTADÍSTICAS DEL EMPLEADO', 130, 285);
-
-            sCtx.font = 'bold 22px Inter, sans-serif';
-            sCtx.fillStyle = '#34d399';
-            sCtx.fillText(`• INGRESOS TOTALES: $${score}`, 130, 340);
-            sCtx.fillStyle = '#f59e0b';
-            sCtx.fillText(`• RANGO: Empleado del Año (Nivel 5)`, 130, 390);
-            sCtx.fillStyle = '#e2e8f0';
-            sCtx.fillText(`• RÉCORD PERSONAL: $${highScore}`, 130, 440);
-
-            sCtx.font = '120px sans-serif';
-            sCtx.fillText('🏖️💰🌴', 780, 370);
-
-            sCtx.font = '16px Inter, sans-serif';
-            sCtx.fillStyle = '#64748b';
-            sCtx.fillText('¡Superé todas las metas corporativas y llegué a la playa! #Oficina1984 #GamifiedCareer', 95, 520);
-
-            shareCanvas.toBlob(async (blob) => {
-                if (!blob) return;
-                const filename = 'mi-triunfo-corporativo-linkedin.png';
-                let saved = false;
+            function readHighScore(game) {
+                if (!game || !game.highScoreKey) return 0;
                 try {
-                    // Published pages block direct downloads; use the platform's downloads capability
-                    const downloads = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null;
-                    if (downloads) {
-                        await downloads.save({ filename, data: blob });
-                        saved = true;
-                    }
-                } catch (err) {
-                    if (err && err.code === 'declined') return;
-                    console.error(err);
-                }
-                if (!saved) {
-                    // Fallback for when the file is opened outside claude.ai
-                    const link = document.createElement('a');
-                    link.download = filename;
-                    link.href = URL.createObjectURL(blob);
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                }
-            }, 'image/png');
-        }
-
-        function update() {
-            if (gameState !== 'PLAYING') return;
-
-            if (coffeeBoostTimer > 0) coffeeBoostTimer--;
-
-            let currentSpeed = player.speed * (coffeeBoostTimer > 0 ? 1.4 : 1);
-
-            // Combine keyboard and touch/D-pad input. Touch input is read from
-            // touchDx/touchDy (set by the D-pad + swipe handlers) instead of being
-            // overwritten here, so mobile controls actually move the player.
-            let dirX = 0;
-            let dirY = 0;
-            if (keys['ArrowLeft'] || keys['a'] || keys['A']) dirX = -1;
-            if (keys['ArrowRight'] || keys['d'] || keys['D']) dirX = 1;
-            if (keys['ArrowUp'] || keys['w'] || keys['W']) dirY = -1;
-            if (keys['ArrowDown'] || keys['s'] || keys['S']) dirY = 1;
-
-            if (dirX === 0 && touchDx !== 0) dirX = touchDx;
-            if (dirY === 0 && touchDy !== 0) dirY = touchDy;
-
-            const mag = Math.hypot(dirX, dirY);
-            if (mag > 1) { dirX /= mag; dirY /= mag; }
-            player.dx = dirX * currentSpeed;
-            player.dy = dirY * currentSpeed;
-
-            player.x += player.dx;
-            player.y += player.dy;
-
-            if (player.dx !== 0 || player.dy !== 0) {
-                player.animFrame += 0.2;
-            }
-
-            if (player.x < 15) player.x = 15;
-            if (player.x > V_WIDTH - player.width - 15) player.x = V_WIDTH - player.width - 15;
-            if (player.y < 45) player.y = 45;
-            if (player.y > V_HEIGHT - player.height - 15) player.y = V_HEIGHT - player.height - 15;
-
-            spawnTimer++;
-
-            let spawnInterval = Math.max(25, 65 - (level * 6));
-            if (spawnTimer % spawnInterval === 0) {
-                paychecks.push({
-                    x: V_WIDTH,
-                    y: Math.random() * (V_HEIGHT - 110) + 50,
-                    size: 30
-                });
-            }
-
-            let obstacleInterval = Math.max(20, 50 - (level * 5));
-            if (spawnTimer % obstacleInterval === 0) {
-                obstacles.push({
-                    x: V_WIDTH,
-                    y: Math.random() * (V_HEIGHT - 110) + 50,
-                    size: 32,
-                    speed: 3.5 + (level * 0.6)
-                });
-            }
-
-            if (spawnTimer % 280 === 0) {
-                powerups.push({
-                    x: V_WIDTH,
-                    y: Math.random() * (V_HEIGHT - 110) + 50,
-                    size: 28,
-                    type: 'coffee'
-                });
-            }
-
-            for (let i = paychecks.length - 1; i >= 0; i--) {
-                paychecks[i].x -= (3.5 + (level * 0.3));
-
-                if (
-                    player.x < paychecks[i].x + paychecks[i].size &&
-                    player.x + player.width > paychecks[i].x &&
-                    player.y < paychecks[i].y + paychecks[i].size &&
-                    player.y + player.height > paychecks[i].y
-                ) {
-                    let earned = 300 + (level * 50);
-                    score += earned;
-                    playSound('coin');
-                    addParticles(paychecks[i].x + 15, paychecks[i].y + 15, '#34d399');
-                    addFloatingText(`+$${earned}`, paychecks[i].x, paychecks[i].y, '#34d399');
-                    paychecks.splice(i, 1);
-                    updateHUD();
-
-                    if (score >= targetPay && level <= 5) {
-                        gameState = 'LEVEL_TRANSITION';
-                        playSound('win');
-                        document.getElementById('levelModalTitle').innerText = `¡META CUMPLIDA EN PISO ${level}!`;
-                        document.getElementById('levelModalDesc').innerText = `Has alcanzado el mínimo requerido de ingresos ($${score} / $${targetPay}). ¡Ascendiendo al siguiente piso!`;
-                        document.getElementById('levelModal').classList.remove('hidden');
-                    }
-                } else if (paychecks[i] && paychecks[i].x < -40) {
-                    paychecks.splice(i, 1);
+                    const raw = localStorage.getItem(game.highScoreKey);
+                    if (!raw) return 0;
+                    const value = game.highScoreField
+                        ? (JSON.parse(raw) || {})[game.highScoreField]
+                        : raw;
+                    const parsed = Number(value);
+                    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+                } catch (e) {
+                    return 0;
                 }
             }
 
-            for (let i = powerups.length - 1; i >= 0; i--) {
-                powerups[i].x -= 3.5;
-                if (
-                    player.x < powerups[i].x + powerups[i].size &&
-                    player.x + player.width > powerups[i].x &&
-                    player.y < powerups[i].y + powerups[i].size &&
-                    player.y + player.height > powerups[i].y
-                ) {
-                    coffeeBoostTimer = 400;
-                    playSound('coffee');
-                    addParticles(powerups[i].x + 14, powerups[i].y + 14, '#f59e0b');
-                    addFloatingText('¡CAFÉ VELOZ!', powerups[i].x, powerups[i].y, '#f59e0b');
-                    powerups.splice(i, 1);
-                } else if (powerups[i] && powerups[i].x < -40) {
-                    powerups.splice(i, 1);
-                }
+            function formatScore(value, prefix, suffix) {
+                const formatted = value.toLocaleString('en-US');
+                return (prefix || '') + formatted + (suffix || '');
             }
 
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].x -= obstacles[i].speed;
+            let gamesWithRecord = 0;
+            catalog.forEach(g => {
+                if (readHighScore(g) > 0) gamesWithRecord++;
+            });
+            const countLabel = playableCount === 1
+                ? '1 juego disponible'
+                : playableCount + ' juegos disponibles';
+            countEl.textContent = gamesWithRecord > 0
+                ? `${countLabel} · ${gamesWithRecord} con récord`
+                : countLabel;
 
-                if (
-                    player.x < obstacles[i].x + obstacles[i].size &&
-                    player.x + player.width > obstacles[i].x &&
-                    player.y < obstacles[i].y + obstacles[i].size &&
-                    player.y + player.height > obstacles[i].y
-                ) {
-                    lives--;
-                    playSound('hit');
-                    addParticles(obstacles[i].x + 16, obstacles[i].y + 16, '#ef4444');
-                    addFloatingText('-1 VIDA', obstacles[i].x, obstacles[i].y, '#ef4444');
-                    obstacles.splice(i, 1);
-                    updateHUD();
-
-                    if (lives <= 0) {
-                        gameState = 'GAMEOVER';
-                        if (score > highScore) {
-                            highScore = score;
-                            localStorage.setItem('arcade_highscore', highScore);
-                            document.getElementById('highScoreVal').innerText = highScore;
+            const shareBtn = document.getElementById('shareHubBtn');
+            if (shareBtn) {
+                shareBtn.addEventListener('click', async () => {
+                    const hubUrl = 'https://ramses-cn.github.io/Linkedin/';
+                    let ok = false;
+                    try {
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            await navigator.clipboard.writeText(hubUrl);
+                            ok = true;
                         }
-                        document.getElementById('failLevel').innerText = level;
-                        document.getElementById('finalScore').innerText = score;
-                        document.getElementById('gameOverScreen').classList.remove('hidden');
+                    } catch (e) {}
+                    if (!ok) {
+                        const ta = document.createElement('textarea');
+                        ta.value = hubUrl;
+                        ta.style.position = 'fixed';
+                        ta.style.opacity = '0';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        try { ok = document.execCommand('copy'); } catch (e) {}
+                        ta.remove();
                     }
-                } else if (obstacles[i] && obstacles[i].x < -40) {
-                    obstacles.splice(i, 1);
+                    shareBtn.textContent = ok ? '✅ Enlace copiado' : '🔗 ' + hubUrl;
+                    setTimeout(() => { shareBtn.textContent = '🔗 Compartir Hub'; }, 2200);
+                });
+            }
+
+            catalog.forEach((game, index) => {
+                const row = document.createElement('article');
+                row.className = 'game-row';
+                if (game.accent) row.style.setProperty('--accent', game.accent);
+                if (game.accentRgb) row.style.setProperty('--accent-rgb', game.accentRgb);
+
+                const numText = '#' + (game.number || String(index + 1).padStart(2, '0'));
+
+                // Left Emblem
+                const emblem = document.createElement('div');
+                emblem.className = 'game-emblem';
+
+                const numSpan = document.createElement('span');
+                numSpan.className = 'game-num font-arcade';
+                numSpan.textContent = numText;
+
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'game-icon';
+                iconSpan.setAttribute('aria-hidden', 'true');
+                iconSpan.textContent = game.icon || '🎮';
+
+                emblem.appendChild(numSpan);
+                emblem.appendChild(iconSpan);
+
+                // Center Info
+                const info = document.createElement('div');
+                info.className = 'game-info';
+
+                const titleLine = document.createElement('div');
+                titleLine.className = 'game-title-line';
+
+                const title = document.createElement('h2');
+                title.className = 'game-title';
+                title.textContent = game.title || 'Juego sin título';
+                titleLine.appendChild(title);
+
+                if (game.version) {
+                    const verPill = document.createElement('span');
+                    verPill.className = 'pill pill-version';
+                    verPill.textContent = game.version;
+                    titleLine.appendChild(verPill);
                 }
-            }
 
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].x += particles[i].vx;
-                particles[i].y += particles[i].vy;
-                particles[i].alpha -= 0.03;
-                if (particles[i].alpha <= 0) particles.splice(i, 1);
-            }
-
-            for (let i = floatingTexts.length - 1; i >= 0; i--) {
-                floatingTexts[i].y -= 1.2;
-                floatingTexts[i].alpha -= 0.02;
-                if (floatingTexts[i].alpha <= 0) floatingTexts.splice(i, 1);
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
-
-            if (gameState === 'VACATION') {
-                const S = V_WIDTH / 800;
-                ctx.fillStyle = '#0284c7';
-                ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
-                ctx.save();
-                ctx.translate(0, V_HEIGHT - 450 * S);
-                ctx.scale(S, S);
-                let skyGrad = ctx.createLinearGradient(0, 0, 0, 450);
-                skyGrad.addColorStop(0, '#0284c7');
-                skyGrad.addColorStop(0.5, '#38bdf8');
-                skyGrad.addColorStop(0.8, '#fed7aa');
-                ctx.fillStyle = skyGrad;
-                ctx.fillRect(0, 0, 800, 450);
-
-                ctx.fillStyle = '#facc15';
-                ctx.beginPath();
-                ctx.arc(800 - 140, 80, 50, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = '#0369a1';
-                ctx.fillRect(0, 450 * 0.55, 800, 450 * 0.45);
-                ctx.fillStyle = '#0ea5e9';
-                ctx.fillRect(0, 450 * 0.55, 800, 14);
-
-                ctx.fillStyle = '#fef08a';
-                ctx.fillRect(0, 450 * 0.74, 800, 450 * 0.26);
-
-                ctx.fillStyle = '#78350f';
-                ctx.fillRect(110, 190, 14, 140);
-                ctx.fillStyle = '#16a34a';
-                ctx.beginPath();
-                ctx.ellipse(117, 190, 55, 20, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = '#92400e';
-                ctx.fillRect(210, 210, 14, 120);
-                ctx.fillRect(340, 210, 14, 120);
-                ctx.fillStyle = '#dc2626';
-                ctx.beginPath();
-                ctx.moveTo(190, 210);
-                ctx.lineTo(370, 210);
-                ctx.lineTo(280, 110);
-                ctx.closePath();
-                ctx.fill();
-
-                ctx.fillStyle = '#15803d';
-                ctx.fillRect(410, 310, 100, 26);
-                ctx.fillStyle = '#22c55e';
-                ctx.fillRect(395, 290, 95, 24);
-                ctx.fillRect(425, 270, 70, 22);
-                ctx.font = 'bold 16px Inter, sans-serif';
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText('💰 FORTUNA LIBRE', 390, 255);
-
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(250, 260, 45, 35);
-                ctx.fillStyle = '#fbcfe8';
-                ctx.beginPath();
-                ctx.arc(272, 245, 14, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.font = 'bold 20px "Press Start 2P", monospace';
-                ctx.fillStyle = '#1e293b';
-                ctx.fillText('¡MISIÓN CUMPLIDA!', 192, 52);
-                ctx.fillStyle = '#facc15';
-                ctx.fillText('¡MISIÓN CUMPLIDA!', 190, 50);
-
-                ctx.restore();
-                return;
-            }
-
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
-
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 3;
-            for (let x = 0; x < V_WIDTH; x += 80) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, V_HEIGHT);
-                ctx.stroke();
-            }
-
-            ctx.font = 'bold 11px "Press Start 2P", monospace';
-            ctx.fillStyle = '#94a3b8';
-            ctx.fillText(floorNames[level-1].split(' (')[0].toUpperCase(), 20, 28);
-
-            paychecks.forEach(p => {
-                ctx.font = '26px sans-serif';
-                ctx.fillText('💰', p.x, p.y + 24);
-            });
-
-            powerups.forEach(p => {
-                ctx.font = '26px sans-serif';
-                ctx.fillText('☕', p.x, p.y + 24);
-            });
-
-            obstacles.forEach(o => {
-                ctx.font = '28px sans-serif';
-                ctx.fillText('📑', o.x, o.y + 26);
-            });
-
-            let bounceY = Math.sin(player.animFrame) * 2;
-            ctx.fillStyle = coffeeBoostTimer > 0 ? '#3b82f6' : '#2563eb';
-            ctx.fillRect(player.x, player.y + 14 + bounceY, player.width, player.height - 14);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(player.x + 14, player.y + 14 + bounceY, 8, 16);
-            ctx.fillStyle = coffeeBoostTimer > 0 ? '#f59e0b' : '#ef4444';
-            ctx.fillRect(player.x + 16, player.y + 16 + bounceY, 4, 18);
-
-            ctx.fillStyle = '#fcd34d';
-            ctx.beginPath();
-            ctx.arc(player.x + player.width / 2, player.y + 10 + bounceY, 11, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#78350f';
-            ctx.fillRect(player.x - 4, player.y + 24 + bounceY, 8, 14);
-
-            particles.forEach(p => {
-                ctx.globalAlpha = p.alpha;
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1.0;
-            });
-
-            floatingTexts.forEach(ft => {
-                ctx.globalAlpha = ft.alpha;
-                ctx.font = 'bold 13px "Press Start 2P", monospace';
-                ctx.fillStyle = ft.color;
-                ctx.fillText(ft.text, ft.x, ft.y);
-                ctx.globalAlpha = 1.0;
-            });
-        }
-
-        // Fixed 60 updates/sec regardless of screen refresh rate (90/120Hz phones)
-        const STEP = 1000 / 60;
-        let lastTime = 0;
-        let acc = 0;
-
-        function startLoop() {
-            lastTime = 0;
-            acc = 0;
-            requestAnimationFrame(loop);
-        }
-
-        function loop(ts) {
-            if (gameState === 'PLAYING') {
-                if (!lastTime) lastTime = ts;
-                acc += Math.min(ts - lastTime, 100);
-                lastTime = ts;
-                while (acc >= STEP) {
-                    update();
-                    acc -= STEP;
-                    if (gameState !== 'PLAYING') break;
+                const highScore = readHighScore(game);
+                if (highScore > 0) {
+                    const recPill = document.createElement('span');
+                    recPill.className = 'pill pill-record';
+                    recPill.textContent = '🏆 Récord: ' + formatScore(highScore, game.scorePrefix, game.scoreSuffix);
+                    titleLine.appendChild(recPill);
                 }
-                draw();
-                requestAnimationFrame(loop);
-            } else if (gameState === 'VACATION') {
-                draw();
-            }
-        }
 
-        applyLayout();
-        draw();
+                const meta = document.createElement('div');
+                meta.className = 'game-meta';
+                const metaParts = [game.genre, game.controls].filter(Boolean);
+                meta.textContent = metaParts.join(' · ');
+
+                const desc = document.createElement('p');
+                desc.className = 'game-desc';
+                desc.textContent = game.description || '';
+
+                const footerMeta = document.createElement('div');
+                footerMeta.className = 'game-footer-meta';
+
+                if (game.folder) {
+                    const folderBadge = document.createElement('span');
+                    folderBadge.className = 'folder-badge';
+                    folderBadge.textContent = game.folder;
+                    footerMeta.appendChild(folderBadge);
+                }
+
+                if (Array.isArray(game.tags)) {
+                    game.tags.forEach(tagText => {
+                        const tag = document.createElement('span');
+                        tag.className = 'pill';
+                        tag.textContent = tagText;
+                        footerMeta.appendChild(tag);
+                    });
+                }
+
+                info.appendChild(titleLine);
+                if (metaParts.length > 0) info.appendChild(meta);
+                if (game.description) info.appendChild(desc);
+                info.appendChild(footerMeta);
+
+                // Right Action
+                const action = document.createElement('div');
+                action.className = 'game-action';
+
+                const playLink = document.createElement('a');
+                playLink.className = 'play-btn font-arcade';
+                playLink.href = game.path || '#';
+                playLink.textContent = '▶ JUGAR';
+                playLink.setAttribute('aria-label', 'Jugar ' + (game.title || ''));
+                action.appendChild(playLink);
+
+                row.appendChild(emblem);
+                row.appendChild(info);
+                row.appendChild(action);
+                listEl.appendChild(row);
+            });
+
+            // Dedicated next-slot placeholder row
+            const nextNum = String(catalog.length + 1).padStart(2, '0');
+            const slotRow = document.createElement('div');
+            slotRow.className = 'slot-row';
+
+            const slotLeft = document.createElement('div');
+            slotLeft.className = 'slot-left';
+
+            const slotBadge = document.createElement('span');
+            slotBadge.className = 'slot-badge font-arcade';
+            slotBadge.textContent = '#' + nextNum;
+
+            const slotTextWrap = document.createElement('div');
+            const slotTitle = document.createElement('div');
+            slotTitle.className = 'slot-title';
+            slotTitle.textContent = 'Próximo juego en camino';
+
+            const slotDesc = document.createElement('div');
+            slotDesc.className = 'slot-desc';
+            slotDesc.textContent = 'Listo para agregar en games/<nombre-del-juego>/ sin cruzarse con los demás.';
+
+            slotTextWrap.appendChild(slotTitle);
+            slotTextWrap.appendChild(slotDesc);
+            slotLeft.appendChild(slotBadge);
+            slotLeft.appendChild(slotTextWrap);
+
+            const slotHint = document.createElement('span');
+            slotHint.className = 'pill';
+            slotHint.textContent = 'Espacio reservado';
+
+            slotRow.appendChild(slotLeft);
+            slotRow.appendChild(slotHint);
+            listEl.appendChild(slotRow);
+        })();
     </script>
-
 </body>
 </html>
