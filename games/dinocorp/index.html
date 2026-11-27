@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>DinoCorp: Misión Salida a Tiempo (v4.1 Deluxe Edition)</title>
+  <title>DinoCorp: Misión Salida a Tiempo (v4.2 Deluxe Edition)</title>
   <style>
     :root {
       --bg-dark: #090d16;
@@ -427,7 +427,7 @@
     <div class="brand-group">
       <a href="../../index.html" class="btn-top" style="text-decoration:none;" title="Volver a la portada">← Portada</a>
       <div class="brand-title">
-        🦖 DINOCORP <span class="badge-deluxe">v4.1 DELUXE</span>
+        🦖 DINOCORP <span class="badge-deluxe">v4.2 DELUXE</span>
       </div>
       <div class="level-selector" id="level-tabs">
         <button class="btn-lvl active" data-lvl="0">1-1 Oficina</button>
@@ -459,6 +459,7 @@
             <h2 id="modal-title">ESTADO DE JORNADA</h2>
             <p id="modal-desc"></p>
             <div class="stats-grid" id="modal-stats"></div>
+            <button class="btn-primary" id="btn-modal-share" style="display:none; background:#0284c7; color:#fff; box-shadow:0 3px 0 #075985; margin-bottom:8px;">📸 Descargar Tarjeta LinkedIn</button>
             <button class="btn-primary" id="btn-modal-action">CONTINUAR</button>
           </div>
         </div>
@@ -528,11 +529,24 @@
   // 1. PERSISTENCIA EN LOCALSTORAGE (RÉCORDS Y CARPETAS)
   // ==========================================
   const SAVE_KEY = 'dinocorp_v4_deluxe_save';
+  const ACH_KEY = 'arcade_hub_achievements';
   let saveData = {
     highScore: 0,
     bestTimeRemaining: 0,
-    foldersPerLevel: { 0: 0, 1: 0, 2: 0, 3: 0 }
+    foldersPerLevel: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    medalsPerLevel: { 0: '', 1: '', 2: '', 3: '' },
+    bestTimePerLevel: { 0: 0, 1: 0, 2: 0, 3: 0 }
   };
+
+  function unlockAchievement(id) {
+    try {
+      const current = JSON.parse(localStorage.getItem(ACH_KEY) || '{}');
+      if (!current[id]) {
+        current[id] = Date.now();
+        localStorage.setItem(ACH_KEY, JSON.stringify(current));
+      }
+    } catch (e) {}
+  }
 
   function loadRecords() {
     try {
@@ -544,8 +558,31 @@
         if (parsed.foldersPerLevel) {
           saveData.foldersPerLevel = { ...saveData.foldersPerLevel, ...parsed.foldersPerLevel };
         }
+        if (parsed.medalsPerLevel) {
+          saveData.medalsPerLevel = { ...saveData.medalsPerLevel, ...parsed.medalsPerLevel };
+        }
+        if (parsed.bestTimePerLevel) {
+          saveData.bestTimePerLevel = { ...saveData.bestTimePerLevel, ...parsed.bestTimePerLevel };
+        }
       }
     } catch (e) {}
+  }
+
+  function medalRank(m) {
+    return m === '🥇' ? 3 : (m === '🥈' ? 2 : (m === '🥉' ? 1 : 0));
+  }
+
+  function awardLevelMedal(levelIdx, foldersCount, remSecs) {
+    const earned = (foldersCount >= 3 && remSecs >= 60) ? '🥇' : ((foldersCount >= 2 || remSecs >= 45) ? '🥈' : '🥉');
+    if (medalRank(earned) > medalRank(saveData.medalsPerLevel[levelIdx] || '')) {
+      saveData.medalsPerLevel[levelIdx] = earned;
+    }
+    if (remSecs > (saveData.bestTimePerLevel[levelIdx] || 0)) {
+      saveData.bestTimePerLevel[levelIdx] = remSecs;
+    }
+    saveRecords(score, levelIdx, foldersCount, remSecs);
+    syncLevelTabs();
+    return earned;
   }
 
   function saveRecords(currentScore, levelIdx, collectedFoldersCount, timeRemaining = null) {
@@ -645,6 +682,10 @@
   const SFX = {
     jump: () => playTone(240, 'square', 0.15, 0.09, 580),
     dash: () => playTone(620, 'sawtooth', 0.12, 0.09, 180),
+    dashReady: () => {
+      playTone(880, 'triangle', 0.06, 0.05);
+      setTimeout(() => playTone(1174, 'triangle', 0.08, 0.05), 45);
+    },
     skid: () => playTone(190, 'triangle', 0.06, 0.06, 120),
     stomp: () => playTone(170, 'triangle', 0.14, 0.14, 70),
     kick: () => playTone(130, 'sawtooth', 0.17, 0.14, 420),
@@ -881,6 +922,7 @@
     scaleY: 1,
     dashTimer: 0,        // Duración del impulso Dash Ejecutivo
     dashCooldown: 0,     // Enfriamiento entre Dashes
+    dashFlashTimer: 0,   // Destello al recargarse el Dash
     invincibleTimer: 0,  // 8s (480 frames) de Bebida Energética Dorada
     jawOpenTimer: 0,     // Expresión facial al lanzar sello o hacer Dash
     senior: false,
@@ -912,6 +954,22 @@
   let goldenSwitch = null;
   let floatingTexts = [];
   let particles = [];
+  let ambientParticles = [];
+  let warpSeq = { active: false, targetLvl: 2, timer: 0 };
+
+  function initAmbientParticles() {
+    ambientParticles = [];
+    for (let i = 0; i < 16; i++) {
+      ambientParticles.push({
+        x: Math.random() * W,
+        y: Math.random() * (GROUND_Y - 20),
+        vx: -0.25 - Math.random() * 0.45,
+        vy: (Math.random() - 0.5) * 0.3,
+        size: 2 + Math.random() * 2.5,
+        alpha: 0.25 + Math.random() * 0.45
+      });
+    }
+  }
 
   function triggerScreenShake(frames = 14, intensity = 5) {
     shakeTimer = Math.max(shakeTimer, frames);
@@ -935,9 +993,12 @@
     }
   }
 
+  const TAB_LABELS = ['1-1 Oficina', '1-2 Sótano', '1-3 Azotea', '1-4 Directorio'];
   function syncLevelTabs() {
     document.querySelectorAll('.btn-lvl').forEach((btn, idx) => {
       btn.classList.toggle('active', idx === currentLevelIdx);
+      const m = saveData.medalsPerLevel && saveData.medalsPerLevel[idx];
+      btn.textContent = m ? `${TAB_LABELS[idx]} ${m}` : TAB_LABELS[idx];
     });
   }
 
@@ -1002,11 +1063,15 @@
     dino.scaleY = 1;
     dino.dashTimer = 0;
     dino.dashCooldown = 0;
+    dino.dashFlashTimer = 0;
     dino.invincibleTimer = 0;
     dino.jawOpenTimer = 0;
     dino.ink = dino.maxInk;
     dino.invulnerable = 0;
     dino.visible = true;
+    warpSeq.active = false;
+    warpSeq.timer = 0;
+    initAmbientParticles();
 
     endingSeq.phase = 0;
     endingSeq.flagY = 130;
@@ -1258,12 +1323,30 @@
     updateChiptuneSequencer(dt);
 
     if (gameState === 'PAUSED' || gameState === 'VICTORY') return;
+    if (gameState === 'WARPING') {
+      dino.y += 2.2 * dt;
+      warpSeq.timer -= dt;
+      if (warpSeq.timer <= 0) {
+        currentLevelIdx = warpSeq.targetLvl;
+        gameState = 'PLAYING';
+        buildLevel(false, true);
+      }
+      return;
+    }
     if (gameState === 'ENDING') {
       updateEndingSequence(dt);
       return;
     }
 
     const lvl = LEVELS[currentLevelIdx];
+
+    for (const ap of ambientParticles) {
+      ap.x += ap.vx * dt;
+      ap.y += ap.vy * dt;
+      if (ap.x < 0) ap.x = W;
+      if (ap.y < 20) ap.y = GROUND_Y - 20;
+      if (ap.y > GROUND_Y - 15) ap.y = 25;
+    }
 
     // 1. Reloj de Jornada y Temporizadores Pro
     workdayTimer += (dt / 60);
@@ -1275,7 +1358,13 @@
     if (shakeTimer > 0) shakeTimer = Math.max(0, shakeTimer - dt);
     if (dino.invulnerable > 0) dino.invulnerable = Math.max(0, dino.invulnerable - dt);
     if (dino.invincibleTimer > 0) dino.invincibleTimer = Math.max(0, dino.invincibleTimer - dt);
+    const prevDashCd = dino.dashCooldown;
     if (dino.dashCooldown > 0) dino.dashCooldown = Math.max(0, dino.dashCooldown - dt);
+    if (prevDashCd > 0 && dino.dashCooldown === 0) {
+      dino.dashFlashTimer = 18;
+      SFX.dashReady();
+    }
+    if (dino.dashFlashTimer > 0) dino.dashFlashTimer = Math.max(0, dino.dashFlashTimer - dt);
     if (dino.jawOpenTimer > 0) dino.jawOpenTimer = Math.max(0, dino.jawOpenTimer - dt);
 
     // Recuperación elástica de Squash & Stretch hacia 1.0
@@ -1461,8 +1550,10 @@
           if (s.targetLvl !== undefined) {
             SFX.warp();
             addFloatingText(`¡WARP ZONE A ${s.label}!`, dino.x - 30, dino.y - 25, '#4ade80');
-            currentLevelIdx = s.targetLvl;
-            buildLevel(false, true);
+            gameState = 'WARPING';
+            warpSeq = { active: true, targetLvl: s.targetLvl, timer: 26 };
+            dino.vx = 0;
+            dino.vy = 0;
             return;
           }
         } else if (dino.vy < 0) {
@@ -1539,6 +1630,7 @@
         addParticles(fl.x + 14, fl.y + 12, '#fbbf24', 12);
         if (foldersCollectedInLevel === 3) {
           score += 1000;
+          unlockAchievement('dinocorp_carpetas');
           addFloatingText('📁 ¡3/3 CARPETAS CONFIDENCIALES! +$1000', dino.x - 50, dino.y - 30, '#fbbf24');
         } else {
           addFloatingText(`📁 CARPETA ${foldersCollectedInLevel}/3 (+$400)`, fl.x - 20, fl.y - 15, '#38bdf8');
@@ -1802,9 +1894,9 @@
         const heightBonus = Math.max(200, Math.round((GROUND_Y - dino.y) * 5));
         score += heightBonus;
         const remSecs = Math.max(0, Math.ceil(MAX_WORKDAY_SECS - workdayTimer));
-        saveRecords(score, currentLevelIdx, foldersCollectedInLevel, remSecs);
+        const earnedMedal = awardLevelMedal(currentLevelIdx, foldersCollectedInLevel, remSecs);
         SFX.win();
-        addFloatingText(`¡META ${lvl.id} SUPERADA! +$${heightBonus}`, dino.x - 60, dino.y - 20, '#4ade80');
+        addFloatingText(`¡META ${lvl.id} ${earnedMedal}! +$${heightBonus}`, dino.x - 60, dino.y - 20, '#4ade80');
       }
     }
 
@@ -1996,14 +2088,16 @@
         dino.visible = false;
         endingSeq.houseLightOn = true;
         endingSeq.phase = 3;
+        unlockAchievement('dinocorp_casa');
         SFX.win();
         addLevelTimer(() => {
           gameState = 'VICTORY';
           showModal(
             '🏠 ¡LLEGASTE A CASA A TIEMPO!',
-            'Completaste los 4 mundos de DinoCorp v4.1 Deluxe, derrotaste al Gerente de las 5:55 PM y ya estás descansando en casa.',
+            'Completaste los 4 mundos de DinoCorp v4.2 Deluxe, derrotaste al Gerente de las 5:55 PM y ya estás descansando en casa.',
             'JUGAR NUEVA CAMPAÑA',
-            () => buildLevel(true, true)
+            () => buildLevel(true, true),
+            true
           );
         }, 850);
       }
@@ -2075,6 +2169,14 @@
 
     // Dibujar Capas Parallax de Fondo
     drawParallaxLayers(lvl);
+
+    // Partículas ambientales sutiles por sector
+    const ambColor = lvl.theme === 'underground' ? '56, 189, 248'
+      : (lvl.theme === 'castle' ? '249, 115, 22' : '255, 255, 255');
+    for (const ap of ambientParticles) {
+      ctx.fillStyle = `rgba(${ambColor}, ${ap.alpha})`;
+      ctx.fillRect(ap.x, ap.y, ap.size, ap.size);
+    }
 
     ctx.save();
     // Aplicar Screen Shake si está activo
@@ -2342,7 +2444,21 @@
 
     ctx.font = 'bold 10px sans-serif';
     ctx.fillStyle = boss.shielded ? '#fca5a5' : '#4ade80';
-    ctx.fillText(boss.shielded ? '🛡️ EN REUNIÓN (INMUNE)' : '💦 ¡VULNERABLE! ATACA', boss.x - 28, boss.y - 12);
+    ctx.fillText(boss.shielded ? '🛡️ EN REUNIÓN (INMUNE)' : '💦 ¡VULNERABLE! ATACA', boss.x - 28, boss.y - 10);
+
+    // Barra de vida segmentada del Jefe 5:55 PM
+    const hpW = 72;
+    const hpX = boss.x + boss.w / 2 - hpW / 2;
+    const hpY = boss.y - 32;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.fillRect(hpX - 2, hpY - 2, hpW + 4, 10);
+    for (let i = 0; i < boss.maxHp; i++) {
+      ctx.fillStyle = i < boss.hp ? '#ef4444' : '#334155';
+      ctx.fillRect(hpX + i * (hpW / boss.maxHp) + 1, hpY, (hpW / boss.maxHp) - 2, 6);
+    }
+    ctx.fillStyle = '#fef2f2';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('GERENTE 5:55 PM', hpX - 4, hpY - 4);
 
     for (const pr of boss.projectiles) {
       ctx.fillStyle = '#dc2626';
@@ -2398,6 +2514,10 @@
       ctx.strokeStyle = auraColors[Math.floor(performance.now() / 60) % auraColors.length];
       ctx.lineWidth = 3;
       ctx.strokeRect(x - 4, y - 4, dino.w + 8, dino.h + 8);
+    } else if (dino.dashFlashTimer > 0) {
+      ctx.strokeStyle = `rgba(56, 189, 248, ${dino.dashFlashTimer / 18})`;
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(x - 3, y - 3, dino.w + 6, dino.h + 6);
     }
 
     ctx.fillStyle = '#16a34a';
@@ -2498,23 +2618,79 @@
   const modalTitle = document.getElementById('modal-title');
   const modalDesc = document.getElementById('modal-desc');
   const modalStats = document.getElementById('modal-stats');
+  const btnModalShare = document.getElementById('btn-modal-share');
   const btnModalAction = document.getElementById('btn-modal-action');
 
-  function showModal(title, desc, btnText, callback) {
+  function generateDinoShareCard() {
+    const sc = document.createElement('canvas');
+    sc.width = 1200; sc.height = 628;
+    const c = sc.getContext('2d');
+    const grad = c.createLinearGradient(0, 0, 1200, 628);
+    grad.addColorStop(0, '#020617');
+    grad.addColorStop(0.5, '#064e3b');
+    grad.addColorStop(1, '#0284c7');
+    c.fillStyle = grad; c.fillRect(0, 0, 1200, 628);
+
+    c.strokeStyle = '#22c55e'; c.lineWidth = 6; c.strokeRect(40, 40, 1120, 548);
+    c.fillStyle = 'rgba(15, 23, 42, 0.94)'; c.fillRect(60, 60, 1080, 508);
+
+    c.fillStyle = '#4ade80'; c.font = 'bold 42px Inter, sans-serif';
+    c.fillText('DINOCORP v4.2: ¡SALIDA A TIEMPO!', 100, 145);
+    c.fillStyle = '#94a3b8'; c.font = '24px Inter, sans-serif';
+    c.fillText('Misión Completada · Arcade Hub (ramses-cn.github.io/Linkedin)', 100, 195);
+
+    c.fillStyle = '#1e293b'; c.fillRect(100, 235, 680, 235);
+    c.strokeStyle = '#334155'; c.lineWidth = 2; c.strokeRect(100, 235, 680, 235);
+    c.fillStyle = '#fbbf24'; c.font = 'bold 28px Inter, sans-serif';
+    c.fillText(`• PUNTAJE DE JORNADA: $${score.toLocaleString('en-US')}`, 135, 300);
+    c.fillStyle = '#34d399';
+    c.fillText(`• RÉCORD HISTÓRICO: $${Math.max(score, saveData.highScore).toLocaleString('en-US')}`, 135, 355);
+    c.fillStyle = '#38bdf8';
+    c.fillText(`• CARPETAS TOTALES: ${getTotalSavedFolders()}/12`, 135, 410);
+
+    c.font = '120px sans-serif';
+    c.fillText('🦖🏠', 845, 385);
+    c.fillStyle = '#64748b'; c.font = '18px Inter, sans-serif';
+    c.fillText('#DinoCorp #SalidaATiempo #WebGames #ArcadeHub', 100, 525);
+
+    sc.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = 'dinocorp-victoria-linkedin.png';
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  }
+
+  btnModalShare.addEventListener('click', generateDinoShareCard);
+
+  let modalIsPause = false;
+  let prevStateBeforeSites = 'PLAYING';
+
+  function showModal(title, desc, btnText, callback, showShare = false, isPause = false) {
     clearInputs();
     saveRecords(score, currentLevelIdx, foldersCollectedInLevel);
     gameState = 'PAUSED';
+    modalIsPause = isPause;
     modalTitle.textContent = title;
     modalDesc.textContent = desc;
+    const medalsStr = [0, 1, 2, 3].map(i => `${LEVELS[i].id}:${saveData.medalsPerLevel[i] || '—'}`).join(' · ');
     modalStats.innerHTML = `
       <div class="stats-row"><span>Nivel Actual:</span><span>${LEVELS[currentLevelIdx].id} - ${LEVELS[currentLevelIdx].name}</span></div>
+      <div class="stats-row"><span>Medallas por Sector:</span><span>${medalsStr}</span></div>
       <div class="stats-row"><span>Carpetas Confidenciales (Nivel / Total):</span><span>📁 ${foldersCollectedInLevel}/3 (Total: ${getTotalSavedFolders()}/12)</span></div>
       <div class="stats-row"><span>Refrigerio Respetado (1:00 PM):</span><span>${lunchBonusAwarded ? '✅ Sí (+$500)' : 'En curso'}</span></div>
-      <div class="stats-row"><span>Récord Histórico (High Score):</span><span>🏆 $${saveData.highScore}</span></div>
-      <div class="stats-row"><span>Puntaje de Jornada Actual:</span><span>💰 $${score}</span></div>
+      <div class="stats-row"><span>Récord Histórico (High Score):</span><span>🏆 $${saveData.highScore.toLocaleString('en-US')}</span></div>
+      <div class="stats-row"><span>Puntaje de Jornada Actual:</span><span>💰 $${score.toLocaleString('en-US')}</span></div>
     `;
+    btnModalShare.style.display = showShare ? 'block' : 'none';
     btnModalAction.textContent = btnText;
     btnModalAction.onclick = () => {
+      modalIsPause = false;
       overlayModal.classList.remove('visible');
       gameState = 'PLAYING';
       if (callback) callback();
@@ -2524,15 +2700,18 @@
   }
 
   function togglePause() {
-    if (gameState === 'ENDING' || gameState === 'VICTORY') return;
+    if (gameState === 'ENDING' || gameState === 'VICTORY' || gameState === 'WARPING') return;
     if (gameState === 'PLAYING') {
       showModal(
-        '☕ JORNADA EN PAUSA (v4.0 DELUXE)',
+        '☕ JORNADA EN PAUSA (v4.2 DELUXE)',
         'Controles: Flechas/WASD para moverte, Espacio para Salto (con Coyote Time), X/Shift para Sello, y C/Z para Dash Ejecutivo (⚡). Compatible con mandos USB/Bluetooth.',
         'CONTINUAR JORNADA',
-        null
+        null,
+        false,
+        true
       );
-    } else if (gameState === 'PAUSED') {
+    } else if (gameState === 'PAUSED' && modalIsPause) {
+      modalIsPause = false;
       overlayModal.classList.remove('visible');
       gameState = 'PLAYING';
       canvas.focus();
@@ -2575,6 +2754,7 @@
   const sitesCodeBox = document.getElementById('sites-code-box');
   document.getElementById('btn-sites').addEventListener('click', () => {
     clearInputs();
+    prevStateBeforeSites = gameState;
     gameState = 'PAUSED';
     sitesCodeBox.value = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
     sitesModal.classList.add('visible');
@@ -2599,8 +2779,8 @@
   });
   document.getElementById('btn-close-sites').addEventListener('click', () => {
     sitesModal.classList.remove('visible');
-    gameState = 'PLAYING';
-    canvas.focus();
+    gameState = overlayModal.classList.contains('visible') ? 'PAUSED' : prevStateBeforeSites;
+    if (gameState === 'PLAYING') canvas.focus();
   });
 
   // ==========================================
@@ -2611,7 +2791,7 @@
     buildLevel(true, true);
     draw();
     showModal(
-      '🦖 DINOCORP v4.1 DELUXE',
+      '🦖 DINOCORP v4.2 DELUXE',
       'Llega a casa antes de las 6:00 PM. Usa Flechas/WASD, Espacio para Saltar, X/Shift para Sello y C/Z para Dash Ejecutivo (⚡).',
       '▶ INICIAR JORNADA',
       () => { initAudio(); }

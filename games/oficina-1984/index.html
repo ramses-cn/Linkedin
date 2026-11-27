@@ -1,45 +1,190 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Oficina 80s: Carrera hacia las Vacaciones</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Oficina 80s: Carrera hacia las Vacaciones (v2.0)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        html, body { overscroll-behavior: none; }
-        .font-arcade { font-family: 'Press Start 2P', monospace; }
-        .font-sans { font-family: 'Inter', sans-serif; }
-        canvas {
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            touch-action: none;
-            -webkit-tap-highlight-color: transparent;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            height: 100%; overscroll-behavior: none;
+            background: #020617; color: #f1f5f9;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            user-select: none; -webkit-user-select: none;
+            overflow-x: hidden;
         }
-        .dpad-btn {
-            touch-action: none;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-user-select: none;
-            user-select: none;
+        body { display: flex; flex-direction: column; justify-content: space-between; }
+        .hidden { display: none !important; }
+        .font-arcade { font-family: 'Press Start 2P', ui-monospace, monospace; }
+
+        /* Header */
+        header {
+            background: #0f172a; border-bottom: 1px solid #1e293b;
+            padding: 8px 14px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+            flex-shrink: 0;
+        }
+        .hdr-inner {
+            max-width: 960px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        }
+        .hdr-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .hdr-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .hdr-title { font-size: 11px; color: #facc15; white-space: nowrap; }
+        .hdr-sub { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+        .hdr-btn {
+            background: #1e293b; color: #e2e8f0;
+            border: 1px solid #334155; border-radius: 8px;
+            padding: 6px 10px; font-size: 11px; font-weight: 700;
+            text-decoration: none; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 4px;
+            transition: background 0.15s;
+        }
+        .hdr-btn:hover { background: #334155; }
+        .record-pill {
+            font-size: 10px; color: #fde047;
+            background: #1e293b; border: 1px solid #334155;
+            border-radius: 8px; padding: 6px 10px; white-space: nowrap;
+        }
+
+        /* Main Stage */
+        main {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 10px 14px max(8px, env(safe-area-inset-bottom));
+            max-width: 1120px; width: 100%; margin: 0 auto; min-height: 0;
         }
         @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 25px rgba(234, 179, 8, 0.4); }
-            50% { box-shadow: 0 0 45px rgba(234, 179, 8, 0.8); }
+            0%, 100% { box-shadow: 0 0 25px rgba(234, 179, 8, 0.36); }
+            50% { box-shadow: 0 0 42px rgba(234, 179, 8, 0.72); }
         }
         .arcade-cabinet {
+            background: #0f172a; border: 2px solid #334155; border-radius: 14px;
+            overflow: hidden; position: relative; display: flex; flex-direction: column;
             animation: pulse-glow 4s infinite ease-in-out;
-            --chrome: 200px; /* header + footer + paddings, subtracted from viewport height */
+            --chrome: 200px;
             width: min(100%, calc((100dvh - var(--chrome)) * 16 / 9));
             min-width: min(100%, 320px);
         }
         .portrait .arcade-cabinet { width: 100%; }
-        .touch-only { display: none; }
-        .dpad-grid { width: 9.5rem; height: 9.5rem; }
+
+        .hud {
+            background: #020617; padding: 8px 14px; border-bottom: 1px solid #1e293b;
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+            font-size: 11px;
+        }
+        .hud-score { color: #34d399; }
+        .hud-target { color: #fbbf24; }
+        .hud-level { color: #60a5fa; display: flex; align-items: center; gap: 8px; }
+        .combo-pill {
+            background: rgba(249, 115, 22, 0.2); color: #fb923c;
+            border: 1px solid rgba(251, 146, 60, 0.5);
+            border-radius: 999px; padding: 2px 7px; font-size: 9px;
+        }
+        .hud-lives { color: #f87171; }
+        .progress-track { width: 100%; height: 6px; background: #1e293b; flex-shrink: 0; }
+        .progress-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #34d399, #facc15);
+            transition: width 0.15s ease-out;
+        }
+
+        #stage { position: relative; width: 100%; background: #0f172a; overflow: hidden; aspect-ratio: 16 / 9; }
+        canvas {
+            width: 100%; height: 100%; display: block;
+            image-rendering: pixelated; image-rendering: crisp-edges;
+            touch-action: none; -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Overlays */
+        .overlay-modal {
+            position: absolute; inset: 0; z-index: 20;
+            background: rgba(2, 6, 23, 0.94);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 18px; text-align: center; overflow-y: auto;
+        }
+        .overlay-vacation {
+            z-index: 30;
+            background: linear-gradient(180deg, rgba(23, 37, 84, 0.97), rgba(2, 6, 23, 0.98));
+        }
+        .emoji-hero { font-size: 32px; margin-bottom: 8px; animation: bounceY 1.5s infinite ease-in-out; }
+        @keyframes bounceY {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .modal-h2 { font-size: 16px; color: #facc15; margin-bottom: 8px; line-height: 1.4; }
+        .modal-h2.green { color: #34d399; }
+        .modal-h2.red { color: #ef4444; }
+        .modal-p { font-size: 12px; color: #cbd5e1; max-width: 440px; margin-bottom: 14px; line-height: 1.55; }
+        .controls-card {
+            background: #0f172a; border: 1px solid #334155; border-radius: 10px;
+            padding: 10px 14px; font-size: 11px; color: #94a3b8;
+            margin-bottom: 16px; line-height: 1.55; max-width: 440px;
+        }
+        .stats-card {
+            background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(234, 179, 8, 0.5);
+            border-radius: 12px; padding: 12px 16px; margin-bottom: 10px;
+            max-width: 380px; width: 100%;
+        }
+        .stats-kicker { font-size: 9px; color: #94a3b8; margin-bottom: 6px; }
+        .stats-money { font-size: 13px; color: #34d399; margin-bottom: 6px; }
+        .stats-rank { font-size: 9px; color: #93c5fd; }
+
+        .name-input {
+            width: 100%; max-width: 380px;
+            background: #0f172a; border: 1px solid #334155; border-radius: 10px;
+            padding: 8px 12px; font-size: 12px; color: #f1f5f9;
+            text-align: center; margin-bottom: 10px; outline: none;
+        }
+        .name-input:focus { border-color: #facc15; }
+
+        .btn-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .btn-arcade {
+            border: none; border-radius: 10px; padding: 11px 16px;
+            font-size: 10px; font-weight: 700; cursor: pointer;
+            transition: transform 0.1s, filter 0.15s;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+        }
+        .btn-arcade:hover { filter: brightness(1.08); }
+        .btn-arcade:active { transform: scale(0.96); }
+        .btn-gold { background: #eab308; color: #020617; }
+        .btn-blue { background: #2563eb; color: #ffffff; }
+        .btn-cyan { background: linear-gradient(90deg, #2563eb, #0891b2); color: #ffffff; }
+        .btn-green { background: #10b981; color: #020617; }
+        .btn-slate { background: #1e293b; color: #f1f5f9; border: 1px solid #475569; }
+        .btn-post { background: #1e293b; color: #fde047; border: 1px solid rgba(234, 179, 8, 0.45); }
+
+        /* Touch D-pad */
+        .touch-only {
+            display: none; background: #020617; padding: 12px;
+            border-top: 1px solid #1e293b; justify-content: space-between; align-items: center;
+        }
+        .dpad-grid { width: 9.5rem; height: 9.5rem; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 6px; }
+        .dpad-btn {
+            background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: #f8fafc; cursor: pointer;
+            touch-action: none; -webkit-tap-highlight-color: transparent;
+        }
+        .dpad-btn:active { background: #2563eb; }
+        .touch-only .hint { text-align: right; font-size: 10px; color: #94a3b8; line-height: 1.5; }
+        .touch-only .hint-title { color: #facc15; font-weight: 700; }
+
+        footer {
+            background: #0f172a; border-top: 1px solid #1e293b;
+            text-align: center; padding: 8px 12px; font-size: 11px; color: #64748b; flex-shrink: 0;
+        }
+
+        @media (max-width: 640px) {
+            .hdr-sub, .record-pill, .hide-xs, footer { display: none; }
+            .hdr-title { font-size: 9px; }
+            .hud { font-size: 9px; padding: 6px 10px; }
+            .modal-h2 { font-size: 13px; }
+        }
         @media (pointer: coarse) {
             .touch-only { display: flex; }
-            .arcade-cabinet { --chrome: 400px; animation: none; box-shadow: 0 0 25px rgba(234,179,8,.4); }
+            .arcade-cabinet { --chrome: 400px; animation: none; box-shadow: 0 0 25px rgba(234, 179, 8, 0.4); }
         }
-        /* Phone in landscape: hide chrome, float D-pad over the sides */
         @media (pointer: coarse) and (max-height: 500px) {
             header, footer { display: none !important; }
             main { padding: 4px !important; }
@@ -48,156 +193,140 @@
             .touch-only .hint { display: none; }
             .dpad-grid { width: 7.5rem; height: 7.5rem; }
         }
-        @media (min-width: 1024px) { .hud { font-size: 14px !important; } }
+        @media (min-width: 1024px) { .hud { font-size: 13px; } }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-full flex flex-col justify-between font-sans select-none overflow-x-hidden">
+<body>
 
-    <header class="bg-slate-900 border-b border-slate-800 py-2 px-3 sm:py-3 sm:px-4 shadow-lg shrink-0">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <a href="../../index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] sm:text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 transition inline-flex items-center gap-1 shrink-0" title="Volver a la portada">← <span class="hidden sm:inline">Portada</span></a>
-                <span class="text-xl">💼</span>
+    <header>
+        <div class="hdr-inner">
+            <div class="hdr-left">
+                <a href="../../index.html" class="hdr-btn" title="Volver a la portada">← <span class="hide-xs">Portada</span></a>
+                <span style="font-size:20px;">💼</span>
                 <div>
-                    <h1 class="font-arcade text-[10px] sm:text-xs md:text-sm text-yellow-400">OFICINA ARCADE 1984</h1>
-                    <p class="text-[9px] sm:text-[10px] text-slate-400 hidden sm:block">Alcanza la meta de ingresos para ascender</p>
+                    <h1 class="font-arcade hdr-title">OFICINA ARCADE 1984 <span style="color:#38bdf8;">v2.0</span></h1>
+                    <p class="hdr-sub">Alcanza la meta de ingresos y mantén la racha para ascender</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2 sm:gap-3">
-                <div class="hidden sm:block text-xs font-arcade text-yellow-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+            <div class="hdr-right">
+                <div class="font-arcade record-pill">
                     RÉCORD: $<span id="highScoreVal">0</span>
                 </div>
-                <button onclick="togglePause()" id="pauseBtn" class="bg-slate-800 hover:bg-slate-700 text-[10px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer" title="Pausar (P / Esc)">
-                    ⏸
-                </button>
-                <button onclick="toggleAudio()" id="soundBtn" class="bg-slate-800 hover:bg-slate-700 text-[10px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer">
-                    🔊 <span id="soundStatus">ON</span>
-                </button>
+                <button onclick="togglePause()" id="pauseBtn" class="hdr-btn" title="Pausar (P / Esc)">⏸</button>
+                <button onclick="toggleMusic()" id="musicBtn" class="hdr-btn" title="Música Synth 80s">🎵 <span id="musicStatus">ON</span></button>
+                <button onclick="toggleAudio()" id="soundBtn" class="hdr-btn" title="Efectos SFX">🔊 <span id="soundStatus">ON</span></button>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow flex flex-col items-center justify-center p-2 md:p-4 max-w-6xl mx-auto w-full min-h-0" style="padding-bottom:max(0.5rem, env(safe-area-inset-bottom))">
-        <div class="bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl relative flex flex-col arcade-cabinet">
-
+    <main>
+        <div class="arcade-cabinet">
             <!-- HUD Bar -->
-            <div class="bg-slate-950 px-2 sm:px-4 py-2 sm:py-2.5 border-b border-slate-800 flex justify-between items-center text-[9px] sm:text-xs font-arcade hud">
-                <div class="text-emerald-400">$<span id="scoreVal">0</span>/<span id="targetVal" class="text-amber-400">2,500</span></div>
-                <div class="text-blue-400">PISO <span id="levelVal">1</span>/5</div>
-                <div class="text-red-400"><span id="livesVal">❤️❤️❤️</span></div>
+            <div class="font-arcade hud">
+                <div class="hud-score">$<span id="scoreVal">0</span>/<span id="targetVal" class="hud-target">2,500</span></div>
+                <div class="hud-level">
+                    <span>PISO <span id="levelVal">1</span>/5</span>
+                    <span id="comboBadge" class="combo-pill hidden">🔥 x1</span>
+                </div>
+                <div class="hud-lives"><span id="livesVal">❤️❤️❤️</span></div>
             </div>
-            <div class="w-full h-1.5 bg-slate-800 shrink-0">
-                <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-400 to-yellow-400 transition-all duration-150" style="width:0%"></div>
+            <div class="progress-track">
+                <div id="progressBar" class="progress-fill"></div>
             </div>
 
-            <!-- Canvas Container (fixed 16:9 to match internal resolution, no distortion) -->
-            <div id="stage" class="relative w-full bg-slate-900 overflow-hidden" style="aspect-ratio:16/9">
-                <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+            <!-- Canvas Container -->
+            <div id="stage">
+                <canvas id="gameCanvas"></canvas>
 
-                <!-- Start Overlay Modal -->
-                <div id="startScreen" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-20 overflow-y-auto">
-                    <div class="text-2xl sm:text-4xl mb-1 sm:mb-3 animate-bounce">👔 💰 ☕</div>
-                    <h2 class="font-arcade text-base sm:text-lg md:text-xl text-yellow-400 mb-2">LA CARRERA CORPORATIVA</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-300 max-w-md mb-4 sm:mb-5 leading-relaxed max-[480px]:hidden">
-                        Recolecta sobres de pago <span class="text-emerald-400 font-bold">($)</span> y café <span class="text-amber-500 font-bold">(☕)</span>, esquiva la burocracia <span class="text-red-400 font-bold">(📑)</span>.
-                        Cada piso exige un <span class="text-amber-400 font-bold">mínimo de ingresos</span> para pasar al siguiente nivel y llegar a tus <span class="text-yellow-400 font-bold">Vacaciones en la Playa</span>.
+                <!-- Start Overlay -->
+                <div id="startScreen" class="overlay-modal">
+                    <div class="emoji-hero">👔 💰 ☕</div>
+                    <h2 class="font-arcade modal-h2">LA CARRERA CORPORATIVA</h2>
+                    <p class="modal-p">
+                        Recolecta sobres de pago <b style="color:#34d399">($)</b>, bonos dorados <b style="color:#facc15">(★)</b>, café veloz y escudos <i>Out of Office</i>; esquiva la burocracia sin perder tu racha de combo hasta llegar a tus <b style="color:#facc15">Vacaciones en la Playa</b>.
                     </p>
-                    <div class="bg-slate-900 border border-slate-700 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-[11px] text-slate-400 mb-3 sm:mb-6 space-y-1 shadow-inner max-[480px]:hidden">
-                        <p>💻 <b>PC:</b> Flechas / WASD para moverte</p>
+                    <div class="controls-card">
+                        <p>💻 <b>PC:</b> Flechas / WASD para moverte · <b>P / Esc</b> para Pausar</p>
                         <p>📱 <b>Móvil:</b> Botones virtuales o desliza el dedo sobre el juego</p>
                     </div>
-                    <button onclick="startGame()" class="font-arcade bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-[11px] sm:text-xs font-bold shadow-lg transition transform active:scale-95 cursor-pointer">
+                    <button onclick="startGame()" class="font-arcade btn-arcade btn-gold">
                         ▶ COMENZAR JUEGO
                     </button>
                 </div>
 
                 <!-- Pause Modal -->
-                <div id="pauseModal" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-20 hidden">
-                    <h2 class="font-arcade text-base sm:text-xl text-yellow-400 mb-2">PAUSA</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-300 mb-5">Tómate un café. Pulsa <span class="text-yellow-300 font-bold">P</span> o <span class="text-yellow-300 font-bold">Esc</span> para continuar.</p>
-                    <div class="flex flex-col sm:flex-row gap-2.5">
-                        <button onclick="togglePause()" class="font-arcade bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-5 py-3 rounded-xl text-[10px] sm:text-xs font-bold shadow-lg transition cursor-pointer">
-                            ▶ CONTINUAR
-                        </button>
-                        <button onclick="restartGame()" class="font-arcade bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 px-5 py-3 rounded-xl text-[10px] sm:text-xs font-bold shadow-lg transition cursor-pointer">
-                            🔄 REINICIAR
-                        </button>
+                <div id="pauseModal" class="overlay-modal hidden">
+                    <h2 class="font-arcade modal-h2">PAUSA</h2>
+                    <p class="modal-p">Tómate un café. Pulsa <b style="color:#fde047">P</b> o <b style="color:#fde047">Esc</b> para continuar.</p>
+                    <div class="btn-row">
+                        <button onclick="togglePause()" class="font-arcade btn-arcade btn-gold">▶ CONTINUAR</button>
+                        <button onclick="restartGame()" class="font-arcade btn-arcade btn-slate">🔄 REINICIAR</button>
                     </div>
                 </div>
 
-                <!-- Level Up / Transition Modal -->
-                <div id="levelModal" class="absolute inset-0 bg-slate-950/92 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-20 hidden">
-                    <h2 id="levelModalTitle" class="font-arcade text-base sm:text-xl text-emerald-400 mb-2">¡META CUMPLIDA!</h2>
-                    <p id="levelModalDesc" class="text-[11px] sm:text-xs text-slate-300 mb-5 sm:mb-6">Has alcanzado el mínimo de ingresos requerido. Ascendiendo al siguiente piso...</p>
-                    <button onclick="nextLevel()" class="font-arcade bg-blue-600 hover:bg-blue-500 text-white px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-[11px] sm:text-xs font-bold shadow-lg transition cursor-pointer">
+                <!-- Level Up Modal -->
+                <div id="levelModal" class="overlay-modal hidden">
+                    <h2 id="levelModalTitle" class="font-arcade modal-h2 green">¡META CUMPLIDA!</h2>
+                    <p id="levelModalDesc" class="modal-p">Has alcanzado el mínimo de ingresos requerido. Ascendiendo al siguiente piso...</p>
+                    <button onclick="nextLevel()" class="font-arcade btn-arcade btn-blue">
                         SUBIR DE PISO ➔
                     </button>
                 </div>
 
-                <!-- Vacation Celebration Modal (Level 5 Completed) with Social Share -->
-                <div id="vacationModal" class="absolute inset-0 bg-gradient-to-b from-blue-950/98 to-slate-950/98 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-30 hidden overflow-y-auto">
-                    <div class="text-3xl sm:text-4xl mb-1 animate-bounce">🏖️ 🍹 🌴</div>
-                    <h2 class="font-arcade text-sm sm:text-base md:text-xl text-yellow-300 mb-1">¡VACACIONES EN LA PLAYA!</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-200 max-w-md mb-3 leading-relaxed">
-                        ¡Has completado con éxito los 5 niveles corporativos cumpliendo todas las metas de ingresos! Disfruta de la cabaña, el sol y tu rumita de dinero.
+                <!-- Vacation Celebration Modal -->
+                <div id="vacationModal" class="overlay-modal overlay-vacation hidden">
+                    <div class="emoji-hero">🏖️ 🍹 🌴</div>
+                    <h2 class="font-arcade modal-h2">¡VACACIONES EN LA PLAYA!</h2>
+                    <p class="modal-p">
+                        ¡Completaste los 5 pisos corporativos cumpliendo todas las metas de ingresos! Disfruta de la cabaña, el sol y tu fortuna.
                     </p>
-
-                    <div class="bg-slate-900/90 border border-yellow-500/50 p-3 rounded-xl text-xs text-yellow-200 mb-3 font-arcade shadow-lg max-w-sm w-full">
-                        <p class="text-[10px] text-slate-400 mb-1">ESTADÍSTICAS FINALES</p>
-                        <p class="text-emerald-400 text-sm mb-1">INGRESOS TOTALES: $<span id="vacationScore">0</span></p>
-                        <p class="text-blue-300 text-[10px]">¡EMPLEADO DEL AÑO CONDECORADO!</p>
+                    <div class="stats-card font-arcade">
+                        <p class="stats-kicker">ESTADÍSTICAS FINALES</p>
+                        <p class="stats-money">INGRESOS TOTALES: $<span id="vacationScore">0</span></p>
+                        <p class="stats-rank">¡EMPLEADO DEL AÑO CONDECORADO!</p>
                     </div>
-
-                    <input id="playerNameInput" type="text" maxlength="28" placeholder="Tu nombre para la tarjeta LinkedIn (opcional)" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 mb-3 text-center focus:outline-none focus:border-yellow-400">
-
-                    <div class="flex flex-col sm:flex-row gap-2 w-full max-w-md justify-center">
-                        <button onclick="generateShareCard()" class="font-arcade bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-3 rounded-xl text-[10px] font-bold shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
-                            📸 DESCARGAR TARJETA
-                        </button>
-                        <button id="copyPostBtn" onclick="copyLinkedInPost()" class="font-arcade bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-yellow-500/40 px-4 py-3 rounded-xl text-[10px] font-bold shadow-lg transition cursor-pointer">
-                            📋 COPIAR POST
-                        </button>
-                        <button onclick="restartGame()" class="font-arcade bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-3 rounded-xl text-[10px] font-bold shadow-lg transition cursor-pointer">
-                            🔄 JUGAR OTRA VEZ
-                        </button>
+                    <input id="playerNameInput" type="text" maxlength="28" placeholder="Tu nombre para la tarjeta LinkedIn (opcional)" class="name-input">
+                    <div class="btn-row">
+                        <button onclick="generateShareCard()" class="font-arcade btn-arcade btn-cyan">📸 DESCARGAR TARJETA</button>
+                        <button id="copyPostBtn" onclick="copyLinkedInPost()" class="font-arcade btn-arcade btn-post">📋 COPIAR POST</button>
+                        <button onclick="restartGame()" class="font-arcade btn-arcade btn-green">🔄 JUGAR OTRA VEZ</button>
                     </div>
                 </div>
 
                 <!-- Game Over Modal -->
-                <div id="gameOverScreen" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-20 hidden">
-                    <h2 class="font-arcade text-base sm:text-xl text-red-500 mb-2">¡DESPEDIDO! (GAME OVER)</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-300 mb-4">No alcanzaste la meta en el piso <span id="failLevel">1</span> o te quedaste sin vidas. Ingresos acumulados: $<span id="finalScore">0</span></p>
-                    <button onclick="startGame()" class="font-arcade bg-blue-600 hover:bg-blue-500 text-white px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-[11px] sm:text-xs font-bold shadow-lg transition cursor-pointer">
+                <div id="gameOverScreen" class="overlay-modal hidden">
+                    <h2 class="font-arcade modal-h2 red">¡DESPEDIDO! (GAME OVER)</h2>
+                    <p class="modal-p">Te quedaste sin vidas en el piso <span id="failLevel">1</span>. Ingresos acumulados: $<span id="finalScore">0</span></p>
+                    <button onclick="startGame()" class="font-arcade btn-arcade btn-blue">
                         🔄 INTENTAR NUEVAMENTE
                     </button>
                 </div>
             </div>
 
             <!-- Virtual D-Pad for Mobile -->
-            <div class="touch-only bg-slate-950 p-3 border-t border-slate-800 justify-between items-center">
-                <div class="dpad-grid grid grid-cols-3 grid-rows-3 gap-1.5">
+            <div class="touch-only">
+                <div class="dpad-grid">
                     <div></div>
-                    <button data-dir="UP" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">⬆️</button>
+                    <button data-dir="UP" class="dpad-btn">⬆️</button>
                     <div></div>
-                    <button data-dir="LEFT" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">⬅️</button>
+                    <button data-dir="LEFT" class="dpad-btn">⬅️</button>
                     <div></div>
-                    <button data-dir="RIGHT" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">➡️</button>
+                    <button data-dir="RIGHT" class="dpad-btn">➡️</button>
                     <div></div>
-                    <button data-dir="DOWN" class="dpad-btn bg-slate-800 active:bg-blue-600 rounded-lg flex items-center justify-center text-xl border border-slate-700 shadow">⬇️</button>
+                    <button data-dir="DOWN" class="dpad-btn">⬇️</button>
                     <div></div>
                 </div>
-                <div class="hint text-right text-[10px] text-slate-400 space-y-1 pr-2">
-                    <p class="text-yellow-400 font-bold">CONTROLES TÁCTILES</p>
+                <div class="hint">
+                    <p class="hint-title">CONTROLES TÁCTILES</p>
                     <p>Mantén presionado</p>
                     <p>o desliza el dedo</p>
                 </div>
             </div>
-
         </div>
     </main>
 
-    <footer class="bg-slate-900 border-t border-slate-800 text-center py-2 sm:py-3 text-[10px] sm:text-xs text-slate-500 shrink-0 hidden sm:block">
-        Oficina 1984 Arcade • Metas de Ingresos por Piso & Modo Vacaciones
+    <footer>
+        Oficina 1984 Arcade v2.0 • Combos, Pisos Temáticos & Modo Vacaciones
     </footer>
 
     <script>
@@ -209,7 +338,17 @@
         canvas.width = V_WIDTH;
         canvas.height = V_HEIGHT;
 
-        // Adapt the play area: wide (800x450) on desktop/landscape, tall on portrait phones
+        const ACH_KEY = 'arcade_hub_achievements';
+        function unlockAchievement(id) {
+            try {
+                const current = JSON.parse(localStorage.getItem(ACH_KEY) || '{}');
+                if (!current[id]) {
+                    current[id] = Date.now();
+                    localStorage.setItem(ACH_KEY, JSON.stringify(current));
+                }
+            } catch (e) {}
+        }
+
         let lastLayoutW = 0;
         let lastLayoutH = 0;
         function applyLayout() {
@@ -218,7 +357,7 @@
             if (portrait) {
                 const cabW = Math.min(window.innerWidth - 16, 700);
                 const h = id => { const el = document.querySelector(id); return el && el.offsetParent !== null ? el.offsetHeight : 0; };
-                const used = h('header') + h('.hud') + h('.touch-only') + 40;
+                const used = h('header') + h('.hud') + h('.touch-only') + 46;
                 const availH = Math.max(window.innerHeight - used, cabW * 0.9);
                 V_WIDTH = 500;
                 V_HEIGHT = Math.max(400, Math.min(760, Math.round(500 * availH / cabW)));
@@ -243,29 +382,33 @@
         });
         window.addEventListener('orientationchange', () => setTimeout(() => { applyLayout(); if (gameState !== 'PLAYING') draw(); }, 250));
 
-        let highScore = Number(localStorage.getItem('arcade_highscore')) || 0;
+        let highScore = 0;
+        try { highScore = Number(localStorage.getItem('arcade_highscore')) || 0; } catch (e) {}
         document.getElementById('highScoreVal').innerText = highScore.toLocaleString('en-US');
 
-        // Audio setup using Web Audio API
+        // Web Audio API + Optional 80s Synth Bassline
         let audioCtx = null;
-        let soundEnabled = localStorage.getItem('oficina1984_sound') !== '0';
+        let soundEnabled = true;
+        let musicEnabled = true;
+        try {
+            soundEnabled = localStorage.getItem('oficina1984_sound') !== '0';
+            musicEnabled = localStorage.getItem('oficina1984_music') !== '0';
+        } catch (e) {}
         document.getElementById('soundStatus').innerText = soundEnabled ? 'ON' : 'OFF';
+        document.getElementById('musicStatus').innerText = musicEnabled ? 'ON' : 'OFF';
 
         function initAudio() {
             if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
             }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         }
 
         function playSound(type) {
             if (!soundEnabled || !audioCtx) return;
             try {
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.connect(gain);
@@ -276,46 +419,87 @@
                     osc.type = 'square';
                     osc.frequency.setValueAtTime(587.33, now);
                     osc.frequency.setValueAtTime(880, now + 0.08);
-                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.setValueAtTime(0.11, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-                    osc.start(now);
-                    osc.stop(now + 0.22);
+                    osc.start(now); osc.stop(now + 0.22);
+                } else if (type === 'gold') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(784, now);
+                    osc.frequency.setValueAtTime(1046.5, now + 0.07);
+                    osc.frequency.setValueAtTime(1318.5, now + 0.14);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                    osc.start(now); osc.stop(now + 0.28);
                 } else if (type === 'coffee') {
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.linearRampToValueAtTime(600, now + 0.15);
-                    gain.gain.setValueAtTime(0.15, now);
+                    osc.frequency.linearRampToValueAtTime(620, now + 0.15);
+                    gain.gain.setValueAtTime(0.14, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                    osc.start(now);
-                    osc.stop(now + 0.25);
+                    osc.start(now); osc.stop(now + 0.25);
+                } else if (type === 'shield') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(480, now);
+                    osc.frequency.linearRampToValueAtTime(860, now + 0.16);
+                    gain.gain.setValueAtTime(0.13, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+                    osc.start(now); osc.stop(now + 0.26);
                 } else if (type === 'hit') {
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(150, now);
                     osc.frequency.linearRampToValueAtTime(40, now + 0.3);
-                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.setValueAtTime(0.17, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                    osc.start(now);
-                    osc.stop(now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
                 } else if (type === 'win') {
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(440, now);
                     osc.frequency.setValueAtTime(554.37, now + 0.1);
                     osc.frequency.setValueAtTime(659.25, now + 0.2);
                     osc.frequency.setValueAtTime(880, now + 0.3);
-                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.setValueAtTime(0.16, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-                    osc.start(now);
-                    osc.stop(now + 0.6);
+                    osc.start(now); osc.stop(now + 0.6);
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) {}
+        }
+
+        const SYNTH_NOTES = [110, 110, 146.8, 130.8, 110, 110, 164.8, 146.8];
+        let synthStep = 0;
+        let synthTimer = 0;
+        function updateSynthMusic() {
+            if (!musicEnabled || !audioCtx || gameState !== 'PLAYING') return;
+            synthTimer++;
+            if (synthTimer < 14) return;
+            synthTimer = 0;
+            try {
+                if (audioCtx.state === 'suspended') return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(SYNTH_NOTES[synthStep % SYNTH_NOTES.length], now);
+                gain.gain.setValueAtTime(0.045, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.19);
+                synthStep++;
+            } catch (e) {}
         }
 
         function toggleAudio() {
             soundEnabled = !soundEnabled;
             try { localStorage.setItem('oficina1984_sound', soundEnabled ? '1' : '0'); } catch (e) {}
             document.getElementById('soundStatus').innerText = soundEnabled ? 'ON' : 'OFF';
+        }
+
+        function toggleMusic() {
+            initAudio();
+            musicEnabled = !musicEnabled;
+            try { localStorage.setItem('oficina1984_music', musicEnabled ? '1' : '0'); } catch (e) {}
+            document.getElementById('musicStatus').innerText = musicEnabled ? 'ON' : 'OFF';
         }
 
         // Game State Variables
@@ -327,6 +511,16 @@
         let coffeeBoostTimer = 0;
         let invulnTimer = 0;
         let shakeTimer = 0;
+        let comboCount = 0;
+        let hasShield = false;
+        let bgScroll = 0;
+
+        function getComboMultiplier() {
+            if (comboCount >= 10) return 4;
+            if (comboCount >= 6) return 3;
+            if (comboCount >= 3) return 2;
+            return 1;
+        }
 
         function togglePause() {
             if (gameState === 'PLAYING') {
@@ -340,14 +534,8 @@
         }
 
         let player = {
-            x: 100,
-            y: 200,
-            width: 36,
-            height: 48,
-            speed: 5.5,
-            dx: 0,
-            dy: 0,
-            animFrame: 0
+            x: 100, y: 200, width: 36, height: 48,
+            speed: 5.5, dx: 0, dy: 0, animFrame: 0
         };
 
         let paychecks = [];
@@ -357,18 +545,16 @@
         let floatingTexts = [];
         let spawnTimer = 0;
 
-        const floorNames = [
-            "Piso 1: Cubículos de Operaciones (Meta: $2,500)",
-            "Piso 2: Contabilidad y Finanzas (Meta: $6,000)",
-            "Piso 3: Recursos Humanos (Meta: $10,500)",
-            "Piso 4: Sala de Juntas Directivas (Meta: $16,000)",
-            "Piso 5: Presidencia Ejecutiva (Meta: $22,000)"
+        const FLOOR_THEMES = [
+            { name: 'PISO 1: OPERACIONES', bg: '#0f172a', grid: '#1e293b', window: 'rgba(56, 189, 248, 0.08)' },
+            { name: 'PISO 2: FINANZAS', bg: '#0b192c', grid: '#1e3a5f', window: 'rgba(52, 211, 153, 0.08)' },
+            { name: 'PISO 3: RECURSOS HUMANOS', bg: '#1e1035', grid: '#312054', window: 'rgba(244, 114, 182, 0.08)' },
+            { name: 'PISO 4: SALA DIRECTIVA', bg: '#1e1b2e', grid: '#3b2f4a', window: 'rgba(251, 191, 36, 0.09)' },
+            { name: 'PISO 5: PRESIDENCIA', bg: '#1c1208', grid: '#3a2712', window: 'rgba(250, 204, 21, 0.12)' }
         ];
 
         const levelTargets = [2500, 6000, 10500, 16000, 22000];
 
-        // ---- INPUT STATE ----
-        // Keyboard state
         const keys = {};
         window.addEventListener('keydown', e => {
             if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && (gameState === 'PLAYING' || gameState === 'PAUSED')) {
@@ -379,37 +565,22 @@
             keys[e.key] = true;
             initAudio();
         });
-        window.addEventListener('keyup', e => {
-            keys[e.key] = false;
-        });
+        window.addEventListener('keyup', e => { keys[e.key] = false; });
 
-        // Touch/D-pad state (held direction, read every frame by update())
         let touchDx = 0;
         let touchDy = 0;
 
         function setDir(dir, active) {
-            const s = 1; // sign multiplier, actual speed applied in update()
             if (dir === 'UP') touchDy = active ? -1 : (touchDy < 0 ? 0 : touchDy);
             if (dir === 'DOWN') touchDy = active ? 1 : (touchDy > 0 ? 0 : touchDy);
             if (dir === 'LEFT') touchDx = active ? -1 : (touchDx < 0 ? 0 : touchDx);
             if (dir === 'RIGHT') touchDx = active ? 1 : (touchDx > 0 ? 0 : touchDx);
         }
 
-        // Wire up D-pad buttons with Pointer Events (covers touch + mouse + pen uniformly,
-        // avoids the double-fire bug from combining ontouchstart + onmousedown)
         document.querySelectorAll('.dpad-btn').forEach(btn => {
             const dir = btn.getAttribute('data-dir');
-
-            const press = (e) => {
-                e.preventDefault();
-                initAudio();
-                setDir(dir, true);
-            };
-            const release = (e) => {
-                e.preventDefault();
-                setDir(dir, false);
-            };
-
+            const press = (e) => { e.preventDefault(); initAudio(); setDir(dir, true); };
+            const release = (e) => { e.preventDefault(); setDir(dir, false); };
             btn.addEventListener('pointerdown', press);
             btn.addEventListener('pointerup', release);
             btn.addEventListener('pointercancel', release);
@@ -417,12 +588,9 @@
             btn.addEventListener('contextmenu', e => e.preventDefault());
         });
 
-        // Swipe-to-move directly on the canvas (also feeds touchDx/touchDy, not player.dx directly,
-        // so it survives update()'s per-frame recalculation)
         let touchActive = false;
         let touchStartX = 0;
         let touchStartY = 0;
-
         canvas.addEventListener('touchstart', e => {
             initAudio();
             touchActive = true;
@@ -437,8 +605,6 @@
             const touch = e.touches[0];
             const diffX = touch.clientX - touchStartX;
             const diffY = touch.clientY - touchStartY;
-
-            // Analog: the further you drag, the faster (full speed at 60px), with a small dead zone
             const DEAD = 8, FULL = 60;
             const ax = Math.abs(diffX), ay = Math.abs(diffY);
             touchDx = ax > DEAD ? Math.sign(diffX) * Math.min((ax - DEAD) / (FULL - DEAD), 1) : 0;
@@ -464,6 +630,8 @@
             coffeeBoostTimer = 0;
             invulnTimer = 0;
             shakeTimer = 0;
+            comboCount = 0;
+            hasShield = false;
             touchDx = 0;
             touchDy = 0;
             document.getElementById('startScreen').classList.add('hidden');
@@ -489,7 +657,6 @@
             spawnTimer = 0;
             invulnTimer = 0;
             shakeTimer = 0;
-
             updateHUD();
         }
 
@@ -500,6 +667,17 @@
             let hearts = '';
             for (let i = 0; i < lives; i++) hearts += '❤️';
             document.getElementById('livesVal').innerText = hearts;
+
+            const mult = getComboMultiplier();
+            const comboEl = document.getElementById('comboBadge');
+            if (comboEl) {
+                if (mult > 1) {
+                    comboEl.classList.remove('hidden');
+                    comboEl.textContent = `🔥 x${mult}`;
+                } else {
+                    comboEl.classList.add('hidden');
+                }
+            }
 
             const prevTarget = level === 1 ? 0 : levelTargets[level - 2];
             const span = Math.max(1, targetPay - prevTarget);
@@ -530,10 +708,11 @@
             document.getElementById('levelModal').classList.add('hidden');
             if (level > 5) {
                 gameState = 'VACATION';
+                unlockAchievement('oficina_vacaciones');
                 playSound('win');
                 if (score > highScore) {
                     highScore = score;
-                    localStorage.setItem('arcade_highscore', highScore);
+                    try { localStorage.setItem('arcade_highscore', highScore); } catch (e) {}
                     document.getElementById('highScoreVal').innerText = highScore.toLocaleString('en-US');
                 }
                 document.getElementById('vacationScore').innerText = score.toLocaleString('en-US');
@@ -555,7 +734,7 @@
             const nameInput = document.getElementById('playerNameInput');
             const playerName = nameInput ? nameInput.value.trim() : '';
             const intro = playerName ? `¡${playerName} completó` : '¡Completé';
-            const postText = `${intro} los 5 pisos de Oficina 1984 Arcade con $${score.toLocaleString('en-US')} acumulados hasta llegar a las vacaciones! 🏖️💼\n\nPruébalo en el Arcade Hub: https://ramses-cn.github.io/Linkedin/\n#Oficina1984 #GameDev #WebGames`;
+            const postText = `${intro} los 5 pisos de Oficina 1984 Arcade v2.0 con $${score.toLocaleString('en-US')} acumulados hasta llegar a las vacaciones! 🏖️💼\n\nPruébalo en el Arcade Hub: https://ramses-cn.github.io/Linkedin/\n#Oficina1984 #GameDev #WebGames`;
             let ok = false;
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -609,8 +788,8 @@
             sCtx.fillStyle = '#94a3b8';
             sCtx.fillText(
                 customName
-                    ? `${customName} · Oficina 1984 Arcade`
-                    : 'Oficina 1984 Arcade - Metas Cumplidas & Éxito Profesional',
+                    ? `${customName} · Oficina 1984 Arcade v2.0`
+                    : 'Oficina 1984 Arcade v2.0 - Metas Cumplidas & Éxito Profesional',
                 95, 190
             );
 
@@ -628,7 +807,7 @@
             sCtx.fillStyle = '#34d399';
             sCtx.fillText(`• INGRESOS TOTALES: $${score.toLocaleString('en-US')}`, 130, 340);
             sCtx.fillStyle = '#f59e0b';
-            sCtx.fillText(`• RANGO: Empleado del Año (Nivel 5)`, 130, 390);
+            sCtx.fillText('• RANGO: Empleado del Año (Nivel 5)', 130, 390);
             sCtx.fillStyle = '#e2e8f0';
             sCtx.fillText(`• RÉCORD PERSONAL: $${highScore.toLocaleString('en-US')}`, 130, 440);
 
@@ -637,50 +816,34 @@
 
             sCtx.font = '16px Inter, sans-serif';
             sCtx.fillStyle = '#64748b';
-            sCtx.fillText('¡Superé todas las metas corporativas y llegué a la playa! #Oficina1984 #GamifiedCareer', 95, 520);
+            sCtx.fillText('¡Superé todas las metas corporativas y llegué a la playa! #Oficina1984 #ArcadeHub', 95, 520);
 
             shareCanvas.toBlob(async (blob) => {
                 if (!blob) return;
                 const filename = 'mi-triunfo-corporativo-linkedin.png';
-                let saved = false;
-                try {
-                    // Published pages block direct downloads; use the platform's downloads capability
-                    const downloads = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null;
-                    if (downloads) {
-                        await downloads.save({ filename, data: blob });
-                        saved = true;
-                    }
-                } catch (err) {
-                    if (err && err.code === 'declined') return;
-                    console.error(err);
-                }
-                if (!saved) {
-                    // Fallback for when the file is opened outside claude.ai
-                    const objectUrl = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.download = filename;
-                    link.href = objectUrl;
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-                }
+                const objectUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = objectUrl;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
             }, 'image/png');
         }
 
         function update() {
             if (gameState !== 'PLAYING') return;
 
+            updateSynthMusic();
             if (coffeeBoostTimer > 0) coffeeBoostTimer--;
             if (invulnTimer > 0) invulnTimer--;
             if (shakeTimer > 0) shakeTimer--;
 
             const speedScale = V_WIDTH / 800;
+            bgScroll = (bgScroll + 1.4 * speedScale) % 160;
             let currentSpeed = player.speed * (coffeeBoostTimer > 0 ? 1.4 : 1);
 
-            // Combine keyboard and touch/D-pad input. Touch input is read from
-            // touchDx/touchDy (set by the D-pad + swipe handlers) instead of being
-            // overwritten here, so mobile controls actually move the player.
             let dirX = 0;
             let dirY = 0;
             if (keys['ArrowLeft'] || keys['a'] || keys['A']) dirX = -1;
@@ -698,10 +861,7 @@
 
             player.x += player.dx;
             player.y += player.dy;
-
-            if (player.dx !== 0 || player.dy !== 0) {
-                player.animFrame += 0.2;
-            }
+            if (player.dx !== 0 || player.dy !== 0) player.animFrame += 0.2;
 
             if (player.x < 15) player.x = 15;
             if (player.x > V_WIDTH - player.width - 15) player.x = V_WIDTH - player.width - 15;
@@ -712,46 +872,61 @@
 
             let spawnInterval = Math.max(25, 65 - (level * 6));
             if (spawnTimer % spawnInterval === 0) {
+                const isGold = Math.random() < 0.16;
                 paychecks.push({
                     x: V_WIDTH,
                     y: Math.random() * (V_HEIGHT - 110) + 50,
-                    size: 30
+                    size: 30,
+                    gold: isGold,
+                    speedMult: isGold ? 1.38 : 1.0
                 });
             }
 
             let obstacleInterval = Math.max(20, 50 - (level * 5));
             if (spawnTimer % obstacleInterval === 0) {
+                const wave = level >= 3 && Math.random() < 0.32;
+                const baseY = Math.random() * (V_HEIGHT - 130) + 60;
                 obstacles.push({
                     x: V_WIDTH,
-                    y: Math.random() * (V_HEIGHT - 110) + 50,
+                    y: baseY,
+                    baseY,
                     size: 32,
-                    speed: 3.5 + (level * 0.6)
+                    speed: 3.5 + (level * 0.6),
+                    wave,
+                    phase: Math.random() * Math.PI * 2
                 });
             }
 
-            if (spawnTimer % 280 === 0) {
+            if (spawnTimer % 260 === 0) {
+                const kind = Math.random() < 0.30 ? 'shield' : 'coffee';
                 powerups.push({
                     x: V_WIDTH,
                     y: Math.random() * (V_HEIGHT - 110) + 50,
                     size: 28,
-                    type: 'coffee'
+                    type: kind
                 });
             }
 
             for (let i = paychecks.length - 1; i >= 0; i--) {
-                paychecks[i].x -= (3.5 + (level * 0.3)) * speedScale;
+                const p = paychecks[i];
+                p.x -= (3.5 + (level * 0.3)) * p.speedMult * speedScale;
 
                 if (
-                    player.x < paychecks[i].x + paychecks[i].size &&
-                    player.x + player.width > paychecks[i].x &&
-                    player.y < paychecks[i].y + paychecks[i].size &&
-                    player.y + player.height > paychecks[i].y
+                    player.x < p.x + p.size &&
+                    player.x + player.width > p.x &&
+                    player.y < p.y + p.size &&
+                    player.y + player.height > p.y
                 ) {
-                    let earned = 300 + (level * 50);
+                    comboCount++;
+                    const mult = getComboMultiplier();
+                    if (mult >= 3) unlockAchievement('oficina_combo');
+                    const baseEarned = 300 + (level * 50);
+                    const earned = Math.round(baseEarned * (p.gold ? 2.5 : 1) * mult);
                     score += earned;
-                    playSound('coin');
-                    addParticles(paychecks[i].x + 15, paychecks[i].y + 15, '#34d399');
-                    addFloatingText(`+$${earned}`, paychecks[i].x, paychecks[i].y, '#34d399');
+                    playSound(p.gold ? 'gold' : 'coin');
+                    addParticles(p.x + 15, p.y + 15, p.gold ? '#facc15' : '#34d399');
+                    const suffix = mult > 1 ? ` x${mult}` : '';
+                    addFloatingText(`+$${earned}${suffix}`, p.x, p.y, p.gold ? '#facc15' : '#34d399');
                     paychecks.splice(i, 1);
                     updateHUD();
 
@@ -762,45 +937,68 @@
                         document.getElementById('levelModalDesc').innerText = `Has alcanzado el mínimo requerido de ingresos ($${score.toLocaleString('en-US')} / $${targetPay.toLocaleString('en-US')}). ¡Ascendiendo al siguiente piso!`;
                         document.getElementById('levelModal').classList.remove('hidden');
                     }
-                } else if (paychecks[i] && paychecks[i].x < -40) {
+                } else if (p.x < -40) {
                     paychecks.splice(i, 1);
                 }
             }
 
             for (let i = powerups.length - 1; i >= 0; i--) {
-                powerups[i].x -= 3.5 * speedScale;
+                const pw = powerups[i];
+                pw.x -= 3.5 * speedScale;
                 if (
-                    player.x < powerups[i].x + powerups[i].size &&
-                    player.x + player.width > powerups[i].x &&
-                    player.y < powerups[i].y + powerups[i].size &&
-                    player.y + player.height > powerups[i].y
+                    player.x < pw.x + pw.size &&
+                    player.x + player.width > pw.x &&
+                    player.y < pw.y + pw.size &&
+                    player.y + player.height > pw.y
                 ) {
-                    coffeeBoostTimer = 400;
-                    playSound('coffee');
-                    addParticles(powerups[i].x + 14, powerups[i].y + 14, '#f59e0b');
-                    addFloatingText('¡CAFÉ VELOZ!', powerups[i].x, powerups[i].y, '#f59e0b');
+                    if (pw.type === 'shield') {
+                        hasShield = true;
+                        playSound('shield');
+                        addParticles(pw.x + 14, pw.y + 14, '#38bdf8');
+                        addFloatingText('🛡️ ¡OUT OF OFFICE!', pw.x, pw.y, '#38bdf8');
+                    } else {
+                        coffeeBoostTimer = 400;
+                        playSound('coffee');
+                        addParticles(pw.x + 14, pw.y + 14, '#f59e0b');
+                        addFloatingText('¡CAFÉ VELOZ!', pw.x, pw.y, '#f59e0b');
+                    }
                     powerups.splice(i, 1);
-                } else if (powerups[i] && powerups[i].x < -40) {
+                } else if (pw.x < -40) {
                     powerups.splice(i, 1);
                 }
             }
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].x -= obstacles[i].speed * speedScale;
+                const o = obstacles[i];
+                o.x -= o.speed * speedScale;
+                if (o.wave) {
+                    o.phase += 0.08;
+                    o.y = Math.max(50, Math.min(V_HEIGHT - 55, o.baseY + Math.sin(o.phase) * 32));
+                }
 
                 if (
                     invulnTimer <= 0 &&
-                    player.x < obstacles[i].x + obstacles[i].size &&
-                    player.x + player.width > obstacles[i].x &&
-                    player.y < obstacles[i].y + obstacles[i].size &&
-                    player.y + player.height > obstacles[i].y
+                    player.x < o.x + o.size &&
+                    player.x + player.width > o.x &&
+                    player.y < o.y + o.size &&
+                    player.y + player.height > o.y
                 ) {
+                    if (hasShield) {
+                        hasShield = false;
+                        invulnTimer = 45;
+                        playSound('shield');
+                        addParticles(o.x + 16, o.y + 16, '#38bdf8');
+                        addFloatingText('🛡️ BLOQUEADO', o.x, o.y, '#38bdf8');
+                        obstacles.splice(i, 1);
+                        continue;
+                    }
                     lives--;
+                    comboCount = 0;
                     invulnTimer = 75;
                     shakeTimer = 14;
                     playSound('hit');
-                    addParticles(obstacles[i].x + 16, obstacles[i].y + 16, '#ef4444');
-                    addFloatingText('-1 VIDA', obstacles[i].x, obstacles[i].y, '#ef4444');
+                    addParticles(o.x + 16, o.y + 16, '#ef4444');
+                    addFloatingText('-1 VIDA', o.x, o.y, '#ef4444');
                     obstacles.splice(i, 1);
                     updateHUD();
 
@@ -808,14 +1006,14 @@
                         gameState = 'GAMEOVER';
                         if (score > highScore) {
                             highScore = score;
-                            localStorage.setItem('arcade_highscore', highScore);
+                            try { localStorage.setItem('arcade_highscore', highScore); } catch (e) {}
                             document.getElementById('highScoreVal').innerText = highScore.toLocaleString('en-US');
                         }
                         document.getElementById('failLevel').innerText = level;
                         document.getElementById('finalScore').innerText = score.toLocaleString('en-US');
                         document.getElementById('gameOverScreen').classList.remove('hidden');
                     }
-                } else if (obstacles[i] && obstacles[i].x < -40) {
+                } else if (o.x < -40) {
                     obstacles.splice(i, 1);
                 }
             }
@@ -832,6 +1030,58 @@
                 floatingTexts[i].alpha -= 0.02;
                 if (floatingTexts[i].alpha <= 0) floatingTexts.splice(i, 1);
             }
+        }
+
+        // Crisp Canvas Pixel-Art Sprites
+        function drawPaycheckSprite(p) {
+            const x = p.x, y = p.y, s = p.size;
+            ctx.fillStyle = p.gold ? '#facc15' : '#10b981';
+            ctx.fillRect(x, y + 5, s, s - 10);
+            ctx.strokeStyle = p.gold ? '#fef08a' : '#a7f3d0';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y + 5, s, s - 10);
+            ctx.fillStyle = p.gold ? '#78350f' : '#022c22';
+            ctx.font = 'bold 13px "Press Start 2P", monospace';
+            ctx.fillText(p.gold ? '★' : '$', x + 8, y + 21);
+        }
+
+        function drawPowerupSprite(pw) {
+            const x = pw.x, y = pw.y;
+            if (pw.type === 'shield') {
+                ctx.fillStyle = '#0284c7';
+                ctx.beginPath();
+                ctx.arc(x + 14, y + 14, 13, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#7dd3fc';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Inter, sans-serif';
+                ctx.fillText('OOO', x + 3, y + 18);
+            } else {
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(x + 5, y + 8, 16, 16);
+                ctx.fillStyle = '#92400e';
+                ctx.fillRect(x + 7, y + 10, 12, 5);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x + 21, y + 11, 4, 8);
+                ctx.fillStyle = '#fcd34d';
+                ctx.fillRect(x + 9, y + 3, 2, 4);
+                ctx.fillRect(x + 15, y + 2, 2, 5);
+            }
+        }
+
+        function drawObstacleSprite(o) {
+            const x = o.x, y = o.y, s = o.size;
+            ctx.fillStyle = o.wave ? '#f87171' : '#f1f5f9';
+            ctx.fillRect(x + 2, y + 2, s - 4, s - 2);
+            ctx.fillStyle = o.wave ? '#991b1b' : '#ef4444';
+            ctx.fillRect(x + 2, y + 2, s - 4, 7);
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(x + 6, y + 13, s - 12, 3);
+            ctx.fillRect(x + 6, y + 19, s - 14, 3);
+            ctx.fillRect(x + 6, y + 25, s - 10, 3);
         }
 
         function draw() {
@@ -852,58 +1102,37 @@
                 ctx.fillRect(0, 0, 800, 450);
 
                 ctx.fillStyle = '#facc15';
-                ctx.beginPath();
-                ctx.arc(800 - 140, 80, 50, 0, Math.PI * 2);
-                ctx.fill();
-
+                ctx.beginPath(); ctx.arc(660, 80, 50, 0, Math.PI * 2); ctx.fill();
                 ctx.fillStyle = '#0369a1';
                 ctx.fillRect(0, 450 * 0.55, 800, 450 * 0.45);
                 ctx.fillStyle = '#0ea5e9';
                 ctx.fillRect(0, 450 * 0.55, 800, 14);
-
                 ctx.fillStyle = '#fef08a';
                 ctx.fillRect(0, 450 * 0.74, 800, 450 * 0.26);
 
-                ctx.fillStyle = '#78350f';
-                ctx.fillRect(110, 190, 14, 140);
+                ctx.fillStyle = '#78350f'; ctx.fillRect(110, 190, 14, 140);
                 ctx.fillStyle = '#16a34a';
-                ctx.beginPath();
-                ctx.ellipse(117, 190, 55, 20, 0, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.ellipse(117, 190, 55, 20, 0, 0, Math.PI * 2); ctx.fill();
 
                 ctx.fillStyle = '#92400e';
                 ctx.fillRect(210, 210, 14, 120);
                 ctx.fillRect(340, 210, 14, 120);
                 ctx.fillStyle = '#dc2626';
-                ctx.beginPath();
-                ctx.moveTo(190, 210);
-                ctx.lineTo(370, 210);
-                ctx.lineTo(280, 110);
-                ctx.closePath();
-                ctx.fill();
+                ctx.beginPath(); ctx.moveTo(190, 210); ctx.lineTo(370, 210); ctx.lineTo(280, 110); ctx.closePath(); ctx.fill();
 
-                ctx.fillStyle = '#15803d';
-                ctx.fillRect(410, 310, 100, 26);
-                ctx.fillStyle = '#22c55e';
-                ctx.fillRect(395, 290, 95, 24);
-                ctx.fillRect(425, 270, 70, 22);
+                ctx.fillStyle = '#15803d'; ctx.fillRect(410, 310, 100, 26);
+                ctx.fillStyle = '#22c55e'; ctx.fillRect(395, 290, 95, 24); ctx.fillRect(425, 270, 70, 22);
                 ctx.font = 'bold 16px Inter, sans-serif';
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText('💰 FORTUNA LIBRE', 390, 255);
 
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(250, 260, 45, 35);
+                ctx.fillStyle = '#0f172a'; ctx.fillRect(250, 260, 45, 35);
                 ctx.fillStyle = '#fbcfe8';
-                ctx.beginPath();
-                ctx.arc(272, 245, 14, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(272, 245, 14, 0, Math.PI * 2); ctx.fill();
 
                 ctx.font = 'bold 20px "Press Start 2P", monospace';
-                ctx.fillStyle = '#1e293b';
-                ctx.fillText('¡MISIÓN CUMPLIDA!', 192, 52);
-                ctx.fillStyle = '#facc15';
-                ctx.fillText('¡MISIÓN CUMPLIDA!', 190, 50);
-
+                ctx.fillStyle = '#1e293b'; ctx.fillText('¡MISIÓN CUMPLIDA!', 192, 52);
+                ctx.fillStyle = '#facc15'; ctx.fillText('¡MISIÓN CUMPLIDA!', 190, 50);
                 ctx.restore();
                 return;
             }
@@ -913,51 +1142,64 @@
                 ctx.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10);
             }
 
-            ctx.fillStyle = '#0f172a';
+            const theme = FLOOR_THEMES[Math.min(FLOOR_THEMES.length - 1, Math.max(0, level - 1))];
+            ctx.fillStyle = theme.bg;
             ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 3;
-            for (let x = 0; x < V_WIDTH; x += 80) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, V_HEIGHT);
-                ctx.stroke();
+            // Subtle scrolling floor windows
+            ctx.fillStyle = theme.window;
+            for (let x = -bgScroll; x < V_WIDTH + 160; x += 160) {
+                ctx.fillRect(x + 20, 52, 90, 110);
+                ctx.fillRect(x + 20, 200, 90, 110);
             }
 
-            ctx.font = 'bold 11px "Press Start 2P", monospace';
+            ctx.strokeStyle = theme.grid;
+            ctx.lineWidth = 3;
+            for (let x = 0; x < V_WIDTH; x += 80) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, V_HEIGHT); ctx.stroke();
+            }
+
+            ctx.font = 'bold 10px "Press Start 2P", monospace';
             ctx.fillStyle = '#94a3b8';
-            ctx.fillText(floorNames[level-1].split(' (')[0].toUpperCase(), 20, 28);
+            ctx.fillText(theme.name, 16, 26);
 
-            paychecks.forEach(p => {
-                ctx.font = '26px sans-serif';
-                ctx.fillText('💰', p.x, p.y + 24);
-            });
+            // Visual Coffee Boost Bar
+            if (coffeeBoostTimer > 0) {
+                const bw = 110;
+                const bx = V_WIDTH - bw - 16;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fillRect(bx, 12, bw, 16);
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(bx + 2, 14, Math.max(0, ((bw - 4) * coffeeBoostTimer) / 400), 12);
+                ctx.strokeStyle = '#fde68a';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(bx, 12, bw, 16);
+                ctx.fillStyle = '#fef3c7';
+                ctx.font = 'bold 8px Inter, sans-serif';
+                ctx.fillText('☕ CAFÉ VELOZ', bx + 22, 23);
+            }
 
-            powerups.forEach(p => {
-                ctx.font = '26px sans-serif';
-                ctx.fillText('☕', p.x, p.y + 24);
-            });
-
-            obstacles.forEach(o => {
-                ctx.font = '28px sans-serif';
-                ctx.fillText('📑', o.x, o.y + 26);
-            });
+            paychecks.forEach(drawPaycheckSprite);
+            powerups.forEach(drawPowerupSprite);
+            obstacles.forEach(drawObstacleSprite);
 
             if (invulnTimer <= 0 || Math.floor(invulnTimer / 5) % 2 === 0) {
                 let bounceY = Math.sin(player.animFrame) * 2;
+                if (hasShield) {
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(player.x + player.width / 2, player.y + player.height / 2 + bounceY, 32, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
                 ctx.fillStyle = coffeeBoostTimer > 0 ? '#3b82f6' : '#2563eb';
                 ctx.fillRect(player.x, player.y + 14 + bounceY, player.width, player.height - 14);
-
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(player.x + 14, player.y + 14 + bounceY, 8, 16);
                 ctx.fillStyle = coffeeBoostTimer > 0 ? '#f59e0b' : '#ef4444';
                 ctx.fillRect(player.x + 16, player.y + 16 + bounceY, 4, 18);
-
                 ctx.fillStyle = '#fcd34d';
-                ctx.beginPath();
-                ctx.arc(player.x + player.width / 2, player.y + 10 + bounceY, 11, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(player.x + player.width / 2, player.y + 10 + bounceY, 11, 0, Math.PI * 2); ctx.fill();
                 ctx.fillStyle = '#78350f';
                 ctx.fillRect(player.x - 4, player.y + 24 + bounceY, 8, 14);
             }
@@ -965,15 +1207,13 @@
             particles.forEach(p => {
                 ctx.globalAlpha = p.alpha;
                 ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
                 ctx.globalAlpha = 1.0;
             });
 
             floatingTexts.forEach(ft => {
                 ctx.globalAlpha = ft.alpha;
-                ctx.font = 'bold 13px "Press Start 2P", monospace';
+                ctx.font = 'bold 12px "Press Start 2P", monospace';
                 ctx.fillStyle = ft.color;
                 ctx.fillText(ft.text, ft.x, ft.y);
                 ctx.globalAlpha = 1.0;
@@ -981,18 +1221,20 @@
             ctx.restore();
         }
 
-        // Fixed 60 updates/sec regardless of screen refresh rate (90/120Hz phones)
         const STEP = 1000 / 60;
         let lastTime = 0;
         let acc = 0;
+        let rafId = null;
 
         function startLoop() {
+            if (rafId !== null) cancelAnimationFrame(rafId);
             lastTime = 0;
             acc = 0;
-            requestAnimationFrame(loop);
+            rafId = requestAnimationFrame(loop);
         }
 
         function loop(ts) {
+            rafId = null;
             if (gameState === 'PLAYING') {
                 if (!lastTime) lastTime = ts;
                 acc += Math.min(ts - lastTime, 100);
@@ -1003,7 +1245,7 @@
                     if (gameState !== 'PLAYING') break;
                 }
                 draw();
-                requestAnimationFrame(loop);
+                rafId = requestAnimationFrame(loop);
             } else if (gameState === 'VACATION') {
                 draw();
             }
@@ -1012,6 +1254,5 @@
         applyLayout();
         draw();
     </script>
-
 </body>
 </html>

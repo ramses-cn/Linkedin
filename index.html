@@ -195,6 +195,49 @@
             color: var(--text-muted);
         }
 
+        /* Logros Corporativos strip */
+        .achievements-panel {
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid var(--border-subtle);
+            border-radius: 0.9rem;
+            padding: 0.9rem 1.15rem;
+            margin-bottom: 1.25rem;
+        }
+        .ach-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.65rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .ach-count { color: var(--gold); }
+        .ach-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .ach-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(30, 41, 59, 0.55);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            color: var(--text-muted);
+        }
+        .ach-pill.unlocked {
+            background: rgba(250, 204, 21, 0.12);
+            border-color: rgba(250, 204, 21, 0.45);
+            color: #fef08a;
+        }
+
         /* Strict 1-game-per-row vertical stack */
         .games-stack {
             display: flex;
@@ -484,6 +527,8 @@
                 <span class="isolation-note">Aislamiento por carpeta: <code>games/&lt;juego&gt;/</code></span>
             </div>
 
+            <section class="achievements-panel" id="achievementsPanel" aria-label="Logros corporativos"></section>
+
             <div id="gamesList" class="games-stack" aria-live="polite"></div>
         </div>
     </main>
@@ -558,6 +603,47 @@
                     shareBtn.textContent = ok ? '✅ Enlace copiado' : '🔗 ' + hubUrl;
                     setTimeout(() => { shareBtn.textContent = '🔗 Compartir Hub'; }, 2200);
                 });
+            }
+
+            const ACHIEVEMENTS_DEF = [
+                { id: 'oficina_combo', icon: '🔥', title: 'Racha x3', desc: 'Consigue multiplicador x3 en Oficina 80s' },
+                { id: 'oficina_vacaciones', icon: '🏖️', title: 'Vacaciones Ganadas', desc: 'Completa los 5 pisos de Oficina 80s' },
+                { id: 'dinocorp_carpetas', icon: '📁', title: 'Archivo Perfecto', desc: 'Recoge 3/3 carpetas en un mundo de DinoCorp' },
+                { id: 'dinocorp_casa', icon: '🏠', title: 'Salida Puntual 6:00 PM', desc: 'Completa los 4 mundos de DinoCorp' },
+                { id: 'supervivencia_boss', icon: '🛑', title: 'Jefe Destituido', desc: 'Derrota a un Jefe de Área en Supervivencia' },
+                { id: 'supervivencia_50', icon: '🏆', title: '50 Bajas en RRHH', desc: 'Alcanza 50 bajas en Supervivencia Corporativa' }
+            ];
+            let unlockedMap = {};
+            try {
+                unlockedMap = JSON.parse(localStorage.getItem('arcade_hub_achievements') || '{}') || {};
+            } catch (e) { unlockedMap = {}; }
+
+            const achPanel = document.getElementById('achievementsPanel');
+            if (achPanel) {
+                const unlockedCount = ACHIEVEMENTS_DEF.filter(a => Boolean(unlockedMap[a.id])).length;
+                const achHead = document.createElement('div');
+                achHead.className = 'ach-head';
+                const achTitle = document.createElement('span');
+                achTitle.textContent = '🏅 LOGROS CORPORATIVOS';
+                const achCount = document.createElement('span');
+                achCount.className = 'ach-count';
+                achCount.textContent = `${unlockedCount} / ${ACHIEVEMENTS_DEF.length} desbloqueados`;
+                achHead.appendChild(achTitle);
+                achHead.appendChild(achCount);
+
+                const achGrid = document.createElement('div');
+                achGrid.className = 'ach-grid';
+                ACHIEVEMENTS_DEF.forEach(a => {
+                    const isUnlocked = Boolean(unlockedMap[a.id]);
+                    const pill = document.createElement('span');
+                    pill.className = 'ach-pill' + (isUnlocked ? ' unlocked' : '');
+                    pill.title = a.desc;
+                    pill.textContent = `${isUnlocked ? a.icon : '🔒'} ${a.title}`;
+                    achGrid.appendChild(pill);
+                });
+
+                achPanel.appendChild(achHead);
+                achPanel.appendChild(achGrid);
             }
 
             catalog.forEach((game, index) => {

@@ -7,13 +7,25 @@ Portada interactiva y colección de mini-juegos web corporativos publicados en *
 
 ## Juegos incluidos
 
-Cada título vive en su propia carpeta aislada dentro de `games/` y se presenta en su propia fila horizontal en la portada para evitar conflictos de estilos, variables o bucles de juego.
+Cada título vive en su propia carpeta aislada dentro de `games/` (sin dependencias de CDN CSS externas para carga instantánea) y se presenta en su propia fila horizontal en la portada.
 
 | # | Juego | Género | Controles | Carpeta |
 |---|---|---|---|---|
-| 01 | **Oficina 80s: Carrera hacia las Vacaciones** (`v1.1`) | Arcade 2D | Flechas / WASD · D-Pad · Swipe · Pausa (`P`) | `games/oficina-1984/` |
-| 02 | **DinoCorp: Misión Salida a Tiempo** (`v4.1 Deluxe`) | Plataformas 2D | Flechas / WASD · Espacio · `X` Sello · `C` Dash · Táctil · Gamepad | `games/dinocorp/` |
-| 03 | **Supervivencia Corporativa: Jefe de Área** (`v1.1`) | Shooter Roguelite 2D | WASD / Flechas + Ratón · Doble Joystick Táctil · Pausa (`P`) | `games/supervivencia-corporativa/` |
+| 01 | **Oficina 80s: Carrera hacia las Vacaciones** (`v2.0`) | Arcade 2D | Flechas / WASD · D-Pad · Swipe · Pausa (`P`) | `games/oficina-1984/` |
+| 02 | **DinoCorp: Misión Salida a Tiempo** (`v4.2 Deluxe`) | Plataformas 2D | Flechas / WASD · Espacio · `X` Sello · `C` Dash · Táctil · Gamepad | `games/dinocorp/` |
+| 03 | **Supervivencia Corporativa: Jefe de Área** (`v2.0`) | Shooter Roguelite 2D | WASD / Flechas + Ratón · `Espacio` Dash · Doble Joystick · Pausa (`P`) | `games/supervivencia-corporativa/` |
+
+---
+
+## Logros Corporativos del Hub
+
+La portada rastrea automáticamente 6 insignias compartidas vía `localStorage` (`arcade_hub_achievements`):
+1. `oficina_combo`: Racha `x3` en *Oficina 80s*
+2. `oficina_vacaciones`: Completar los 5 pisos en *Oficina 80s*
+3. `dinocorp_carpetas`: 3/3 carpetas en un mundo de *DinoCorp*
+4. `dinocorp_casa`: Completar los 4 mundos de *DinoCorp*
+5. `supervivencia_boss`: Derrotar un Jefe de Área en *Supervivencia Corporativa*
+6. `supervivencia_50`: Alcanzar 50 bajas en *Supervivencia Corporativa*
 
 ---
 
@@ -21,7 +33,7 @@ Cada título vive en su propia carpeta aislada dentro de `games/` y se presenta 
 
 ```text
 Linkedin/
-├── index.html                          # Portada Arcade Hub (1 juego por fila)
+├── index.html                          # Portada Arcade Hub (1 juego por fila + logros)
 ├── games-registry.js                   # Catálogo central (window.GAMES_CATALOG)
 ├── assets/
 │   └── og-cover.png                    # Imagen Open Graph (1200x630) para LinkedIn
