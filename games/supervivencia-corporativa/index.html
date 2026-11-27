@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Supervivencia Corporativa: Jefe de Área (v2.0)</title>
+    <title>Supervivencia Corporativa: Jefe de Área (v2.1)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
@@ -239,6 +239,20 @@
         }
         .back-link:hover { color: #0f172a; }
 
+        .diff-picker {
+            background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 14px; padding: 10px 12px; margin-bottom: 14px;
+        }
+        .diff-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+        .diff-btn {
+            flex: 1; min-width: 105px; background: #ffffff; color: #334155;
+            border: 2px solid #cbd5e1; border-radius: 10px; padding: 7px 10px;
+            font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.15s;
+        }
+        .diff-btn:hover { border-color: #3b82f6; color: #0f172a; }
+        .diff-btn.active { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
+        .diff-hint { font-size: 11px; color: #475569; font-weight: 600; margin-top: 6px; }
+
         @media (max-width: 640px) {
             .hud { padding: 6px 8px; gap: 6px; }
             .hud-card { padding: 4px 8px; gap: 6px; }
@@ -265,6 +279,9 @@
             .upgrades-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .upgrade-card { padding: 10px 8px; }
             .upgrade-icon { font-size: 26px; margin-bottom: 4px; }
+            .diff-picker { padding: 6px 8px; margin-bottom: 8px; }
+            .diff-btn { padding: 5px 8px; font-size: 10.5px; min-width: 90px; }
+            .diff-hint { font-size: 10px; margin-top: 4px; }
             .btn-primary { padding: 9px 14px; font-size: 13px; }
             .back-link { margin-top: 6px; font-size: 12px; }
             .dash-fab { bottom: 10px; padding: 7px 12px; font-size: 11px; }
@@ -378,7 +395,15 @@
         <div class="modal">
             <div class="hero-emblem">👔</div>
             <h1>SUPERVIVENCIA<br><span class="accent">CORPORATIVA</span></h1>
-            <p class="modal-sub">Sobrevive a la oficina, esquiva memorándums con Dash, recoge armas y cafés, y derrota al Jefe de Área cada 20 bajas.</p>
+            <p class="modal-sub">Sobrevive a la oficina, esquiva memorándums con Dash, recoge armas y cafés, y derrota al Jefe de Área.</p>
+            <div class="diff-picker" id="diffPicker">
+                <div class="diff-row">
+                    <button type="button" class="diff-btn" data-diff="pasante">🟢 Pasante</button>
+                    <button type="button" class="diff-btn active" data-diff="jefe">🟡 Jefe de Área</button>
+                    <button type="button" class="diff-btn" data-diff="director">🔴 Director Tóxico</button>
+                </div>
+                <div class="diff-hint" id="diffHint">100 HP · Ritmo equilibrado · Jefe cada 20 bajas</div>
+            </div>
             <div class="controls-box">
                 <h3>Comandos del Juego</h3>
                 <div class="controls-grid">
@@ -522,8 +547,38 @@
         let xp = 0;
         let xpToNextLevel = 50;
 
+        const DIFF_KEY = 'supervivencia_diff';
+        const DIFFICULTIES = {
+            pasante:  { label: 'Pasante',         maxHp: 125, enemyHpMult: 0.85, enemySpeedMult: 0.82, enemyDmgMult: 0.80, spawnStart: 1.65, spawnMin: 0.55, medkitDrop: 0.12, bossEvery: 25, invulnDur: 0.55, hint: '125 HP · Enemigos suaves · Más café · Jefe cada 25 bajas' },
+            jefe:     { label: 'Jefe de Área',    maxHp: 100, enemyHpMult: 1.00, enemySpeedMult: 1.00, enemyDmgMult: 1.00, spawnStart: 1.35, spawnMin: 0.42, medkitDrop: 0.09, bossEvery: 20, invulnDur: 0.45, hint: '100 HP · Curva equilibrada · Jefe cada 20 bajas' },
+            director: { label: 'Director Tóxico', maxHp: 85,  enemyHpMult: 1.18, enemySpeedMult: 1.18, enemyDmgMult: 1.22, spawnStart: 1.05, spawnMin: 0.34, medkitDrop: 0.06, bossEvery: 15, invulnDur: 0.32, hint: '85 HP · Hordas rápidas y letales · Jefe cada 15 bajas' }
+        };
+        let selectedDiff = 'jefe';
+        try {
+            const savedDiff = localStorage.getItem(DIFF_KEY);
+            if (savedDiff && DIFFICULTIES[savedDiff]) selectedDiff = savedDiff;
+        } catch (e) {}
+        function getDiff() { return DIFFICULTIES[selectedDiff] || DIFFICULTIES.jefe; }
+        function setDifficulty(key) {
+            if (!DIFFICULTIES[key]) return;
+            selectedDiff = key;
+            try { localStorage.setItem(DIFF_KEY, key); } catch (e) {}
+            document.querySelectorAll('#diffPicker .diff-btn').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-diff') === key);
+            });
+            const hint = document.getElementById('diffHint');
+            if (hint) hint.textContent = DIFFICULTIES[key].hint;
+        }
+        document.querySelectorAll('#diffPicker .diff-btn').forEach(b => {
+            b.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setDifficulty(b.getAttribute('data-diff'));
+            });
+        });
+        setDifficulty(selectedDiff);
+
         const WEAPON_TYPES = {
-            ENGRAPADORA: { name: 'Engrapadora', icon: '📠', type: 'pistol', fireRate: 0.35, damage: 15, speed: 1200, count: 1, spread: 0.02, color: '#e2e8f0', width: 8, height: 3 },
+            ENGRAPADORA: { name: 'Engrapadora', icon: '📠', type: 'pistol', fireRate: 0.30, damage: 15, speed: 1200, count: 1, spread: 0.02, color: '#e2e8f0', width: 8, height: 3 },
             CV: { name: 'Lanzador de CVs', icon: '📄', type: 'shotgun', fireRate: 0.68, damage: 13, speed: 840, count: 5, spread: 0.24, color: '#ffffff', width: 10, height: 14 },
             SELLO: { name: 'Sello Automático', icon: '🛑', type: 'rifle', fireRate: 0.1, damage: 9, speed: 1500, count: 1, spread: 0.07, color: '#ef4444', width: 6, height: 6 }
         };
@@ -705,13 +760,14 @@
             constructor(x, y) {
                 this.x = x; this.y = y; this.radius = 18;
                 this.baseSpeed = 300; this.speedMult = 1;
-                this.maxHealth = 100; this.health = this.maxHealth;
+                this.maxHealth = getDiff().maxHp; this.health = this.maxHealth;
                 this.angle = 0; this.weapon = { ...WEAPON_TYPES.ENGRAPADORA };
                 this.shootCooldown = 0;
                 this.damageMult = 1;
                 this.fireRateMult = 1;
                 this.pierceBonus = 0;
                 this.shields = 0;
+                this.invulnTimer = 0;
                 this.dashTimer = 0;
                 this.dashCooldown = 0;
                 this.dashMaxCooldown = 2.2;
@@ -744,6 +800,9 @@
 
             draw() {
                 ctx.save(); ctx.translate(this.x, this.y);
+                if (this.invulnTimer > 0 && Math.floor(this.invulnTimer * 18) % 2 === 0) {
+                    ctx.globalAlpha = 0.45;
+                }
                 if (this.shields > 0) {
                     ctx.beginPath();
                     ctx.arc(0, 0, this.radius + 9, 0, Math.PI * 2);
@@ -787,6 +846,7 @@
             }
 
             update(dt) {
+                if (this.invulnTimer > 0) this.invulnTimer = Math.max(0, this.invulnTimer - dt);
                 if (this.dashCooldown > 0) {
                     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
                     updateDashHUD();
@@ -850,7 +910,9 @@
                     const inacc = (Math.random() - 0.5) * (w.spread * 0.5);
                     const currentAngle = startAngle + (i * w.spread) + inacc;
                     const vel = { x: Math.cos(currentAngle) * w.speed, y: Math.sin(currentAngle) * w.speed };
-                    projectiles.push(new Projectile(spawnX, spawnY, vel, Math.round(w.damage * this.damageMult), w, 1 + this.pierceBonus));
+                    const isCrit = Math.random() < 0.15;
+                    const dmg = Math.round(w.damage * this.damageMult * (isCrit ? 1.75 : 1));
+                    projectiles.push(new Projectile(spawnX, spawnY, vel, dmg, w, 1 + this.pierceBonus, isCrit));
                 }
 
                 for (let i = 0; i < 3; i++) {
@@ -861,15 +923,17 @@
             }
 
             takeDamage(amount) {
-                if (this.dashTimer > 0) return;
+                if (this.dashTimer > 0 || this.invulnTimer > 0) return;
                 if (this.shields > 0) {
                     this.shields--;
+                    this.invulnTimer = 0.35;
                     SFX.shield();
                     triggerShake(0.14, 4);
                     addFloatingText('🛡️ ¡HOME OFFICE!', this.x, this.y - 24, '#0284c7');
                     updateHUD();
                     return;
                 }
+                this.invulnTimer = getDiff().invulnDur;
                 this.health -= amount;
                 SFX.hurt();
                 triggerShake(0.2, 7);
@@ -885,9 +949,10 @@
         }
 
         class Projectile {
-            constructor(x, y, v, dmg, config, pierce = 1) {
+            constructor(x, y, v, dmg, config, pierce = 1, isCrit = false) {
                 this.x = x; this.y = y; this.v = v; this.dmg = dmg; this.config = config;
                 this.pierceLeft = pierce;
+                this.isCrit = isCrit;
                 this.hitIds = new Set();
                 this.radius = Math.max(config.width, config.height) / 2;
                 this.angle = Math.atan2(v.y, v.x);
@@ -895,9 +960,9 @@
             }
             draw() {
                 ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
-                ctx.fillStyle = this.config.color;
+                ctx.fillStyle = this.isCrit ? '#facc15' : this.config.color;
                 ctx.fillRect(-this.config.width / 2, -this.config.height / 2, this.config.width, this.config.height);
-                ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+                ctx.strokeStyle = this.isCrit ? '#b45309' : '#334155'; ctx.lineWidth = 1;
                 ctx.strokeRect(-this.config.width / 2, -this.config.height / 2, this.config.width, this.config.height);
                 ctx.restore();
             }
@@ -965,6 +1030,10 @@
                         const heal = 35;
                         player.health = Math.min(player.maxHealth, player.health + heal);
                         addFloatingText(`+${heal} HP`, this.x, this.y - 18, '#059669');
+                    } else if (player.weapon.name === this.weapon.name) {
+                        player.health = Math.min(player.maxHealth, player.health + 15);
+                        addXp(15);
+                        addFloatingText('✨ +15 HP · +15 XP', this.x, this.y - 18, '#0284c7');
                     } else {
                         player.weapon = { ...this.weapon };
                         addFloatingText(`${this.weapon.icon} ${this.weapon.name}`, this.x, this.y - 18, '#2563eb');
@@ -1021,6 +1090,10 @@
                     this.suitColor = ['#0f172a', '#1e293b', '#334155'][Math.floor(Math.random() * 3)];
                     this.tieColor = Math.random() > 0.2 ? '#ef4444' : '#f59e0b';
                 }
+                const diff = getDiff();
+                this.health = Math.max(10, Math.round(this.health * diff.enemyHpMult));
+                this.speed = this.speed * diff.enemySpeedMult;
+                this.damage = Math.max(4, Math.round(this.damage * diff.enemyDmgMult));
                 this.maxHealth = this.health;
                 this.markedForDeletion = false;
             }
@@ -1104,13 +1177,16 @@
                 }
             }
 
-            takeDamage(amount) {
+            takeDamage(amount, isCrit = false) {
                 if (this.markedForDeletion) return;
                 this.health -= amount;
-                addFloatingText(`-${amount}`, this.x + (Math.random() - 0.5) * 14, this.y - this.radius - 6, this.isBoss ? '#dc2626' : '#0f172a');
+                const dmgLabel = isCrit ? `⚡ -${amount}!` : `-${amount}`;
+                const dmgColor = isCrit ? '#d97706' : (this.isBoss ? '#dc2626' : '#0f172a');
+                addFloatingText(dmgLabel, this.x + (Math.random() - 0.5) * 14, this.y - this.radius - 6, dmgColor);
                 for (let i = 0; i < 4; i++) particles.push(new Particle(this.x, this.y, { x: (Math.random() - 0.5) * 180, y: (Math.random() - 0.5) * 180 }, Math.random() * 3 + 1, '#166534'));
 
                 if (this.health <= 0) {
+                    const diff = getDiff();
                     this.markedForDeletion = true;
                     kills++;
                     saveRecord();
@@ -1135,12 +1211,12 @@
                         if (r < 0.05) {
                             const wTypes = ['CV', 'SELLO'];
                             pickups.push(new Pickup(this.x, this.y, wTypes[Math.floor(Math.random() * wTypes.length)]));
-                        } else if (r < 0.13) {
+                        } else if (r < 0.05 + diff.medkitDrop) {
                             pickups.push(new Pickup(this.x, this.y, 'medkit'));
                         }
                     }
 
-                    if (kills > 0 && kills % 20 === 0) spawnBoss();
+                    if (kills > 0 && kills % diff.bossEvery === 0) spawnBoss();
                 } else {
                     SFX.hit();
                 }
@@ -1168,13 +1244,36 @@
         let spawnInterval = 1.5;
 
         function getSpawnPos() {
-            let x, y, valid = false, attempts = 0;
-            while (!valid && attempts < 20) {
-                x = Math.random() * WORLD_WIDTH; y = Math.random() * WORLD_HEIGHT;
-                if (x < camera.x - 100 || x > camera.x + canvas.width + 100 || y < camera.y - 100 || y > camera.y + canvas.height + 100) valid = true;
-                attempts++;
+            const minSafeDist = Math.min(canvas.width, canvas.height) * 0.42;
+            const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+            for (let attempt = 0; attempt < 15; attempt++) {
+                const margin = 80 + Math.random() * 140;
+                const edge = Math.floor(Math.random() * 4);
+                let x, y;
+                if (edge === 0) {
+                    x = camera.x + Math.random() * canvas.width;
+                    y = camera.y - margin;
+                } else if (edge === 1) {
+                    x = camera.x + canvas.width + margin;
+                    y = camera.y + Math.random() * canvas.height;
+                } else if (edge === 2) {
+                    x = camera.x + Math.random() * canvas.width;
+                    y = camera.y + canvas.height + margin;
+                } else {
+                    x = camera.x - margin;
+                    y = camera.y + Math.random() * canvas.height;
+                }
+                x = clamp(x, 60, WORLD_WIDTH - 60);
+                y = clamp(y, 60, WORLD_HEIGHT - 60);
+                if (!checkPointInObstacles(x, y) && Math.hypot(x - player.x, y - player.y) >= minSafeDist) {
+                    return { x, y };
+                }
             }
-            return { x: x || 100, y: y || 100 };
+            const ang = Math.random() * Math.PI * 2;
+            return {
+                x: clamp(player.x + Math.cos(ang) * 420, 60, WORLD_WIDTH - 60),
+                y: clamp(player.y + Math.sin(ang) * 420, 60, WORLD_HEIGHT - 60)
+            };
         }
 
         function spawnBoss() {
@@ -1261,7 +1360,7 @@
             GAME_STATE = 'LEVEL_UP'; level++; xpToNextLevel = Math.floor(xpToNextLevel * 1.5);
             saveRecord();
             SFX.levelup();
-            spawnInterval = Math.max(0.4, spawnInterval * 0.9); updateHUD();
+            spawnInterval = Math.max(getDiff().spawnMin, spawnInterval * 0.9); updateHUD();
 
             const pool = [...UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
             const container = document.getElementById('upgrades-container');
@@ -1407,9 +1506,9 @@
             c.fillStyle = 'rgba(15, 23, 42, 0.94)'; c.fillRect(60, 60, 1080, 508);
 
             c.fillStyle = '#38bdf8'; c.font = 'bold 42px Inter, sans-serif';
-            c.fillText('SUPERVIVENCIA CORPORATIVA v2.0', 100, 145);
+            c.fillText('SUPERVIVENCIA CORPORATIVA v2.1', 100, 145);
             c.fillStyle = '#94a3b8'; c.font = '24px Inter, sans-serif';
-            c.fillText('Reporte de Rendimiento · Arcade Hub (ramses-cn.github.io/Linkedin)', 100, 195);
+            c.fillText(`Reporte de Rendimiento · Modo ${getDiff().label} · Arcade Hub`, 100, 195);
 
             c.fillStyle = '#1e293b'; c.fillRect(100, 235, 680, 235);
             c.strokeStyle = '#334155'; c.lineWidth = 2; c.strokeRect(100, 235, 680, 235);
@@ -1479,12 +1578,18 @@
             spawnTimer += dt;
             if (spawnTimer > spawnInterval) {
                 spawnTimer = 0;
-                const pos = getSpawnPos();
-                let kind = 'normal';
-                const r = Math.random();
-                if (level >= 3 && r < 0.18) kind = 'auditor';
-                else if (level >= 2 && r < 0.40) kind = 'intern';
-                zombies.push(new Zombie(pos.x, pos.y, level, kind));
+                if (zombies.length < 55) {
+                    const pairThreshold = selectedDiff === 'director' ? 3 : 4;
+                    const batchCount = (level >= pairThreshold && Math.random() < 0.25) ? 2 : 1;
+                    for (let s = 0; s < batchCount; s++) {
+                        const pos = getSpawnPos();
+                        let kind = 'normal';
+                        const r = Math.random();
+                        if (level >= 3 && r < 0.18) kind = 'auditor';
+                        else if (level >= 2 && r < 0.40) kind = 'intern';
+                        zombies.push(new Zombie(pos.x, pos.y, level, kind));
+                    }
+                }
             }
 
             player.update(dt);
@@ -1513,7 +1618,7 @@
                     if (z.markedForDeletion || p.hitIds.has(z.id)) continue;
                     if (Math.hypot(p.x - z.x, p.y - z.y) < p.radius + z.radius) {
                         p.hitIds.add(z.id);
-                        z.takeDamage(p.dmg);
+                        z.takeDamage(p.dmg, p.isCrit);
                         p.pierceLeft--;
                         if (p.pierceLeft <= 0) { p.markedForDeletion = true; break; }
                     }
@@ -1562,7 +1667,7 @@
             document.getElementById('gameOverModal').style.opacity = '0';
             document.getElementById('ui-boss-warning').classList.add('hidden');
 
-            level = 1; kills = 0; xp = 0; xpToNextLevel = 50; spawnInterval = 1.5; spawnTimer = 0;
+            level = 1; kills = 0; xp = 0; xpToNextLevel = 50; spawnInterval = getDiff().spawnStart; spawnTimer = 0;
             shakeTimer = 0; shakeIntensity = 0;
             generateOffice();
             player = new Player(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);

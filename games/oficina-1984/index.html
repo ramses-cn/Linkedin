@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Oficina 80s: Carrera hacia las Vacaciones (v2.0)</title>
+    <title>Oficina 80s: Carrera hacia las Vacaciones (v2.1)</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -166,6 +166,20 @@
         .btn-slate { background: #1e293b; color: #f1f5f9; border: 1px solid #475569; }
         .btn-post { background: #1e293b; color: #fde047; border: 1px solid rgba(234, 179, 8, 0.45); }
 
+        .diff-picker {
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            margin-bottom: 10px; max-width: 460px; width: 100%;
+        }
+        .diff-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        .diff-btn {
+            background: #0f172a; color: #cbd5e1; border: 1px solid #334155;
+            border-radius: 8px; padding: 6px 10px; font-size: 10.5px; font-weight: 700;
+            cursor: pointer; transition: all 0.15s; flex: 1; min-width: 92px;
+        }
+        .diff-btn:hover { border-color: #facc15; color: #f8fafc; }
+        .diff-btn.active { background: #eab308; color: #020617; border-color: #fde047; }
+        .diff-hint { font-size: 10px; color: #94a3b8; }
+
         /* Touch D-pad */
         .touch-only {
             display: none; background: #020617; padding: 12px;
@@ -209,6 +223,9 @@
             .controls-card-title { font-size: 9px; margin-bottom: 3px; }
             .controls-list { gap: 4px 8px; }
             .stats-card { padding: 8px 10px; margin-bottom: 6px; }
+            .diff-picker { margin-bottom: 6px; gap: 3px; }
+            .diff-btn { padding: 4px 8px; font-size: 9px; min-width: 78px; }
+            .diff-hint { font-size: 9px; }
             .btn-arcade { padding: 8px 12px; font-size: 9px; }
         }
         @media (pointer: coarse) {
@@ -282,6 +299,14 @@
                             <div><kbd>P</kbd> / <kbd>Esc</kbd> Pausar</div>
                             <div style="grid-column: 1 / -1;">📱 <b>Móvil:</b> D-Pad táctil o desliza el dedo</div>
                         </div>
+                    </div>
+                    <div class="diff-picker" id="diffPicker">
+                        <div class="diff-row">
+                            <button type="button" class="diff-btn" data-diff="normal" onclick="setDifficulty('normal')">🟢 Normal</button>
+                            <button type="button" class="diff-btn active" data-diff="retador" onclick="setDifficulty('retador')">🟡 Retador</button>
+                            <button type="button" class="diff-btn" data-diff="extremo" onclick="setDifficulty('extremo')">🔴 Extremo</button>
+                        </div>
+                        <div class="diff-hint" id="diffHint">4★ máx x2.5 · 3 vidas · Velocidad estándar</div>
                     </div>
                     <button onclick="startGame()" class="font-arcade btn-arcade btn-gold">
                         ▶ COMENZAR JUEGO
@@ -532,11 +557,35 @@
             document.getElementById('musicStatus').innerText = musicEnabled ? 'ON' : 'OFF';
         }
 
-        // Game State Variables
+        // Game State Variables & Difficulty Presets
+        const DIFF_KEY = 'oficina1984_diff';
+        const DIFFICULTIES = {
+            normal:  { label: 'Normal',  lives: 4, obsSpeedMult: 0.85, obsRateMult: 0.85, waveFloor: 4, graceFrames: 90, hint: '4 vidas · Menos trámites · Ondas desde Piso 4' },
+            retador: { label: 'Retador', lives: 3, obsSpeedMult: 1.00, obsRateMult: 1.00, waveFloor: 3, graceFrames: 72, hint: '3 vidas · Curva equilibrada · Ondas desde Piso 3' },
+            extremo: { label: 'Extremo', lives: 2, obsSpeedMult: 1.22, obsRateMult: 1.20, waveFloor: 2, graceFrames: 54, hint: '2 vidas · Ritmo intenso · Ondas desde Piso 2' }
+        };
+        let selectedDiff = 'retador';
+        try {
+            const savedDiff = localStorage.getItem(DIFF_KEY);
+            if (savedDiff && DIFFICULTIES[savedDiff]) selectedDiff = savedDiff;
+        } catch (e) {}
+        function getDiff() { return DIFFICULTIES[selectedDiff] || DIFFICULTIES.retador; }
+        function setDifficulty(key) {
+            if (!DIFFICULTIES[key]) return;
+            selectedDiff = key;
+            try { localStorage.setItem(DIFF_KEY, key); } catch (e) {}
+            document.querySelectorAll('#diffPicker .diff-btn').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-diff') === key);
+            });
+            const hint = document.getElementById('diffHint');
+            if (hint) hint.textContent = DIFFICULTIES[key].hint;
+        }
+        setDifficulty(selectedDiff);
+
         let gameState = 'START';
         let score = 0;
         let level = 1;
-        let lives = 3;
+        let lives = getDiff().lives;
         let targetPay = 2500;
         let coffeeBoostTimer = 0;
         let invulnTimer = 0;
@@ -544,11 +593,14 @@
         let comboCount = 0;
         let hasShield = false;
         let bgScroll = 0;
+        let floorGraceTimer = 0;
+        let lastObstacleY = -999;
+        let lastObstacleFrame = -999;
 
         function getComboMultiplier() {
-            if (comboCount >= 10) return 4;
-            if (comboCount >= 6) return 3;
-            if (comboCount >= 3) return 2;
+            if (comboCount >= 10) return 2.5;
+            if (comboCount >= 6) return 2;
+            if (comboCount >= 3) return 1.5;
             return 1;
         }
 
@@ -653,9 +705,10 @@
 
         function startGame() {
             initAudio();
+            const diff = getDiff();
             score = 0;
             level = 1;
-            lives = 3;
+            lives = diff.lives;
             targetPay = levelTargets[0];
             coffeeBoostTimer = 0;
             invulnTimer = 0;
@@ -685,6 +738,9 @@
             particles = [];
             floatingTexts = [];
             spawnTimer = 0;
+            floorGraceTimer = getDiff().graceFrames;
+            lastObstacleY = -999;
+            lastObstacleFrame = -999;
             invulnTimer = 0;
             shakeTimer = 0;
             updateHUD();
@@ -764,7 +820,7 @@
             const nameInput = document.getElementById('playerNameInput');
             const playerName = nameInput ? nameInput.value.trim() : '';
             const intro = playerName ? `¡${playerName} completó` : '¡Completé';
-            const postText = `${intro} los 5 pisos de Oficina 1984 Arcade v2.0 con $${score.toLocaleString('en-US')} acumulados hasta llegar a las vacaciones! 🏖️💼\n\nPruébalo en el Arcade Hub: https://ramses-cn.github.io/Linkedin/\n#Oficina1984 #GameDev #WebGames`;
+            const postText = `${intro} los 5 pisos de Oficina 1984 Arcade v2.1 (modo ${getDiff().label}) con $${score.toLocaleString('en-US')} acumulados hasta llegar a las vacaciones! 🏖️💼\n\nPruébalo en el Arcade Hub: https://ramses-cn.github.io/Linkedin/\n#Oficina1984 #GameDev #WebGames`;
             let ok = false;
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -818,8 +874,8 @@
             sCtx.fillStyle = '#94a3b8';
             sCtx.fillText(
                 customName
-                    ? `${customName} · Oficina 1984 Arcade v2.0`
-                    : 'Oficina 1984 Arcade v2.0 - Metas Cumplidas & Éxito Profesional',
+                    ? `${customName} · Oficina 1984 Arcade v2.1 (${getDiff().label})`
+                    : `Oficina 1984 Arcade v2.1 (${getDiff().label}) · Metas Cumplidas`,
                 95, 190
             );
 
@@ -899,29 +955,41 @@
             if (player.y > V_HEIGHT - player.height - 15) player.y = V_HEIGHT - player.height - 15;
 
             spawnTimer++;
+            if (floorGraceTimer > 0) floorGraceTimer--;
+            const diff = getDiff();
 
-            let spawnInterval = Math.max(25, 65 - (level * 6));
+            let spawnInterval = Math.max(26, 62 - (level * 5));
+            let spawnedPayY = null;
             if (spawnTimer % spawnInterval === 0) {
                 const isGold = Math.random() < 0.16;
+                spawnedPayY = Math.random() * (V_HEIGHT - 110) + 50;
                 paychecks.push({
                     x: V_WIDTH,
-                    y: Math.random() * (V_HEIGHT - 110) + 50,
+                    y: spawnedPayY,
                     size: 30,
                     gold: isGold,
-                    speedMult: isGold ? 1.38 : 1.0
+                    speedMult: isGold ? 1.32 : 1.0
                 });
             }
 
-            let obstacleInterval = Math.max(20, 50 - (level * 5));
-            if (spawnTimer % obstacleInterval === 0) {
-                const wave = level >= 3 && Math.random() < 0.32;
-                const baseY = Math.random() * (V_HEIGHT - 130) + 60;
+            let obstacleInterval = Math.max(22, Math.round((54 - (level * 5)) / diff.obsRateMult));
+            if (floorGraceTimer <= 0 && spawnTimer % obstacleInterval === 0) {
+                const wave = level >= diff.waveFloor && Math.random() < 0.32;
+                let baseY = Math.random() * (V_HEIGHT - 130) + 60;
+                for (let attempt = 0; attempt < 6; attempt++) {
+                    const tooClosePrev = (spawnTimer - lastObstacleFrame < 75) && Math.abs(baseY - lastObstacleY) < 64;
+                    const overlapsPay = spawnedPayY !== null && Math.abs(baseY - spawnedPayY) < 36;
+                    if (!tooClosePrev && !overlapsPay) break;
+                    baseY = Math.random() * (V_HEIGHT - 130) + 60;
+                }
+                lastObstacleY = baseY;
+                lastObstacleFrame = spawnTimer;
                 obstacles.push({
                     x: V_WIDTH,
                     y: baseY,
                     baseY,
                     size: 32,
-                    speed: 3.5 + (level * 0.6),
+                    speed: (3.2 + (level * 0.55)) * diff.obsSpeedMult,
                     wave,
                     phase: Math.random() * Math.PI * 2
                 });
@@ -942,16 +1010,16 @@
                 p.x -= (3.5 + (level * 0.3)) * p.speedMult * speedScale;
 
                 if (
-                    player.x < p.x + p.size &&
-                    player.x + player.width > p.x &&
-                    player.y < p.y + p.size &&
-                    player.y + player.height > p.y
+                    player.x - 4 < p.x + p.size &&
+                    player.x + player.width + 4 > p.x &&
+                    player.y - 4 < p.y + p.size &&
+                    player.y + player.height + 4 > p.y
                 ) {
                     comboCount++;
                     const mult = getComboMultiplier();
-                    if (mult >= 3) unlockAchievement('oficina_combo');
+                    if (comboCount >= 6) unlockAchievement('oficina_combo');
                     const baseEarned = 300 + (level * 50);
-                    const earned = Math.round(baseEarned * (p.gold ? 2.5 : 1) * mult);
+                    const earned = Math.round(baseEarned * (p.gold ? 2 : 1) * mult);
                     score += earned;
                     playSound(p.gold ? 'gold' : 'coin');
                     addParticles(p.x + 15, p.y + 15, p.gold ? '#facc15' : '#34d399');
@@ -1008,10 +1076,10 @@
 
                 if (
                     invulnTimer <= 0 &&
-                    player.x < o.x + o.size &&
-                    player.x + player.width > o.x &&
-                    player.y < o.y + o.size &&
-                    player.y + player.height > o.y
+                    player.x < o.x + o.size - 4 &&
+                    player.x + player.width > o.x + 4 &&
+                    player.y < o.y + o.size - 4 &&
+                    player.y + player.height > o.y + 4
                 ) {
                     if (hasShield) {
                         hasShield = false;

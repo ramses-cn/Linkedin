@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>DinoCorp: Misión Salida a Tiempo (v4.2 Deluxe Edition)</title>
+  <title>DinoCorp: Misión Salida a Tiempo (v4.3 Deluxe Edition)</title>
   <style>
     :root {
       --bg-dark: #090d16;
@@ -438,6 +438,44 @@
       font-weight: 700;
       color: #f8fafc;
     }
+    .diff-picker {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .diff-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .diff-btn {
+      flex: 1;
+      min-width: 96px;
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #475569;
+      border-radius: 7px;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .diff-btn:hover { border-color: var(--accent-gold); color: #fff; }
+    .diff-btn.active {
+      background: var(--accent-gold);
+      color: #090d16;
+      border-color: #fde047;
+    }
+    .diff-meta {
+      margin-top: 5px;
+      font-size: 10.5px;
+      color: #94a3b8;
+    }
 
     /* Adaptación multi-dispositivo: móviles pequeños, tablet y horizontal corto */
     @media (max-width: 720px) {
@@ -467,6 +505,9 @@
       .controls-guide { padding: 6px 10px; margin-bottom: 8px; }
       .controls-guide-title { font-size: 9px; margin-bottom: 4px; }
       .ctrl-grid { gap: 4px 10px; font-size: 10.5px; }
+      .diff-picker { padding: 5px 8px; margin-bottom: 6px; }
+      .diff-btn { padding: 4px 6px; font-size: 10px; min-width: 82px; }
+      .diff-meta { font-size: 9.5px; margin-top: 3px; }
       .stats-grid { padding: 6px 10px; margin-bottom: 8px; font-size: 11px; }
       .btn-primary { padding: 8px 14px; font-size: 12px; }
       .touch-btn { width: 48px; height: 48px; font-size: 14px; }
@@ -511,6 +552,7 @@
           <div class="modal-card">
             <h2 id="modal-title">ESTADO DE JORNADA</h2>
             <p id="modal-desc"></p>
+            <div class="diff-picker" id="modal-difficulty" style="display:none;"></div>
             <div class="controls-guide" id="modal-controls" style="display:none;"></div>
             <div class="stats-grid" id="modal-stats"></div>
             <button class="btn-primary" id="btn-modal-share" style="display:none; background:#0284c7; color:#fff; box-shadow:0 3px 0 #075985; margin-bottom:8px;">📸 Descargar Tarjeta LinkedIn</button>
@@ -615,7 +657,9 @@
   }
 
   function awardLevelMedal(levelIdx, foldersCount, remSecs) {
-    const earned = (foldersCount >= 3 && remSecs >= 60) ? '🥇' : ((foldersCount >= 2 || remSecs >= 45) ? '🥈' : '🥉');
+    const goldSecs = Math.round(MAX_WORKDAY_SECS * 0.35);
+    const silverSecs = Math.round(MAX_WORKDAY_SECS * 0.25);
+    const earned = (foldersCount >= 3 && remSecs >= goldSecs) ? '🥇' : ((foldersCount >= 2 || remSecs >= silverSecs) ? '🥈' : '🥉');
     if (medalRank(earned) > medalRank(saveData.medalsPerLevel[levelIdx] || '')) {
       saveData.medalsPerLevel[levelIdx] = earned;
     }
@@ -934,6 +978,19 @@
     { id: '1-4', name: 'Búnker de Directorio', theme: 'castle', worldW: 4550, goalX: 4180, hasHouse: true }
   ];
 
+  const DIFF_KEY = 'dinocorp_diff';
+  const DIFFICULTIES = {
+    relajado:    { label: 'Relajado',      emoji: '🟢', lives: 4, maxSecs: 185, enemySpeedMult: 0.85, planeRateMult: 0.80, inkRegenFrames: 110, dashCd: 32, bossHp: 4, bossActionFrames: 105, meta: '4 vidas · 185s por sector · Jefe 4 HP' },
+    corporativo: { label: 'Corporativo',   emoji: '🟡', lives: 3, maxSecs: 150, enemySpeedMult: 1.00, planeRateMult: 1.00, inkRegenFrames: 145, dashCd: 40, bossHp: 5, bossActionFrames: 92,  meta: '3 vidas · 150s por sector · Jefe 5 HP' },
+    cierre:      { label: 'Cierre de Mes', emoji: '🔴', lives: 2, maxSecs: 120, enemySpeedMult: 1.24, planeRateMult: 1.28, inkRegenFrames: 175, dashCd: 48, bossHp: 6, bossActionFrames: 80,  meta: '2 vidas · 120s por sector · Jefe 6 HP' }
+  };
+  let selectedDiff = 'corporativo';
+  try {
+    const savedDiff = localStorage.getItem(DIFF_KEY);
+    if (savedDiff && DIFFICULTIES[savedDiff]) selectedDiff = savedDiff;
+  } catch (e) {}
+  function getDiff() { return DIFFICULTIES[selectedDiff] || DIFFICULTIES.corporativo; }
+
   let currentLevelIdx = 0;
   let gameState = 'PLAYING'; // PLAYING, PAUSED, ENDING, VICTORY
   let debugMode = false;
@@ -945,13 +1002,20 @@
 
   let score = 0;
   let bonuses = 0;
-  let lives = 3;
+  let lives = getDiff().lives;
   let workdayTimer = 0;
-  const MAX_WORKDAY_SECS = 160;
-  const LUNCH_DEADLINE_SECS = 70;
+  let MAX_WORKDAY_SECS = getDiff().maxSecs;
+  let LUNCH_DEADLINE_SECS = Math.round(MAX_WORKDAY_SECS * 0.45);
   let entryMarked = false;
   let checkpointReached = false;
   let lunchBonusAwarded = false;
+
+  function applyDifficulty() {
+    const diff = getDiff();
+    MAX_WORKDAY_SECS = diff.maxSecs;
+    LUNCH_DEADLINE_SECS = Math.round(MAX_WORKDAY_SECS * 0.45);
+    return diff;
+  }
 
   // Jugador: Dino Ejecutivo con físicas Coyote Time, Jump Buffer, Squash & Stretch y Dash
   const dino = {
@@ -1074,11 +1138,15 @@
   function buildLevel(fullReset = false, switchedLevel = false) {
     clearInputs();
     clearLevelTimers();
+    const diff = applyDifficulty();
+    const savedFolderFlags = (!fullReset && !switchedLevel && checkpointReached && folders.length)
+      ? folders.map(f => f.collected)
+      : null;
 
     if (fullReset) {
       score = 0;
       bonuses = 0;
-      lives = 3;
+      lives = diff.lives;
       currentLevelIdx = 0;
       checkpointReached = false;
       lunchBonusAwarded = false;
@@ -1109,10 +1177,11 @@
     dino.invincibleTimer = 0;
     dino.jawOpenTimer = 0;
     dino.ink = dino.maxInk;
-    dino.invulnerable = 0;
+    dino.invulnerable = (!fullReset && !switchedLevel) ? 45 : 0;
     dino.visible = true;
     warpSeq.active = false;
     warpSeq.timer = 0;
+    planeSpawnTimer = 0;
     initAmbientParticles();
 
     endingSeq.phase = 0;
@@ -1313,11 +1382,24 @@
       goldenSwitch = { x: 3975, y: GROUND_Y - 44, w: 34, h: 44, pressed: false };
       boss = {
         x: 3840, y: GROUND_Y - 76, w: 62, h: 76,
-        vx: -1.3, vy: 0, hp: 5, maxHp: 5,
-        alive: true, fallingInPit: false,
-        shielded: true, vulnerableTimer: 0, hurtCooldown: 0, actionTimer: 90,
+        vx: -1.3 * diff.enemySpeedMult, vy: 0, hp: diff.bossHp, maxHp: diff.bossHp,
+        alive: true, fallingInPit: false, enraged: false,
+        shielded: true, vulnerableTimer: 0, hurtCooldown: 0, actionTimer: diff.bossActionFrames,
         projectiles: []
       };
+    }
+
+    if (savedFolderFlags && savedFolderFlags.length === folders.length) {
+      folders.forEach((f, idx) => { f.collected = Boolean(savedFolderFlags[idx]); });
+      foldersCollectedInLevel = folders.filter(f => f.collected).length;
+    }
+
+    const worldScale = 1 + currentLevelIdx * 0.06;
+    for (const en of enemies) {
+      en.vx *= worldScale * diff.enemySpeedMult;
+    }
+    for (const fb of firebars) {
+      fb.speed *= (0.95 + currentLevelIdx * 0.03) * diff.enemySpeedMult;
     }
 
     cameraX = Math.max(0, dino.x - 200);
@@ -1413,9 +1495,10 @@
     dino.scaleX += (1 - dino.scaleX) * 0.22 * dt;
     dino.scaleY += (1 - dino.scaleY) * 0.22 * dt;
 
+    const diff = getDiff();
     if (dino.ink < dino.maxInk) {
       dino.inkRegenTimer += dt;
-      if (dino.inkRegenTimer >= 150) {
+      if (dino.inkRegenTimer >= diff.inkRegenFrames) {
         dino.ink++;
         dino.inkRegenTimer = 0;
       }
@@ -1424,7 +1507,7 @@
     // 2. Habilidad: DASH EJECUTIVO (Tecla C / Z / Botón ⚡ DASH)
     if (dashJustPressed && dino.dashCooldown <= 0 && dino.dashTimer <= 0) {
       dino.dashTimer = 11;
-      dino.dashCooldown = 42;
+      dino.dashCooldown = diff.dashCd;
       dino.jawOpenTimer = 14;
       dino.scaleX = 1.34;
       dino.scaleY = 0.78;
@@ -1869,13 +1952,16 @@
       }
     }
 
-    // 13. Aviones de Auditoría Urgente
+    // 13. Aviones de Auditoría Urgente (progresivo por mundo y dificultad)
+    const planeBaseFrames = [210, 180, 150, 130][currentLevelIdx] || 175;
+    const planeThreshold = Math.round(planeBaseFrames / diff.planeRateMult);
     if (dino.x > 1100 && dino.x < lvl.goalX - 450) {
       planeSpawnTimer += dt;
-      if (planeSpawnTimer >= 175) {
+      if (planeSpawnTimer >= planeThreshold) {
         planeSpawnTimer = 0;
         const py = Math.random() > 0.5 ? GROUND_Y - 32 : GROUND_Y - 78;
-        paperPlanes.push({ x: cameraX + W + 40, y: py, w: 34, h: 16, vx: -5.2 });
+        const planeVx = -(4.6 + currentLevelIdx * 0.35) * diff.enemySpeedMult;
+        paperPlanes.push({ x: cameraX + W + 40, y: py, w: 34, h: 16, vx: planeVx });
       }
     }
 
@@ -2017,15 +2103,23 @@
       if (boss.vulnerableTimer <= 0) boss.shielded = true;
     }
 
+    if (!boss.enraged && boss.hp <= Math.floor(boss.maxHp / 2) && boss.hp > 0) {
+      boss.enraged = true;
+      boss.vx *= 1.32;
+      triggerScreenShake(14, 5);
+      addFloatingText('🔥 ¡FURIA 5:58 PM!', boss.x - 24, boss.y - 46, '#ef4444');
+    }
+
+    const diff = getDiff();
     boss.actionTimer -= dt;
     if (boss.actionTimer <= 0) {
-      boss.actionTimer = 95;
-      if (boss.y >= GROUND_Y - boss.h - 2) boss.vy = -10.2;
+      boss.actionTimer = boss.enraged ? Math.round(diff.bossActionFrames * 0.72) : diff.bossActionFrames;
+      if (boss.y >= GROUND_Y - boss.h - 2) boss.vy = boss.enraged ? -11.0 : -10.2;
       const highShot = Math.random() > 0.5;
       boss.projectiles.push({
         x: boss.x - 16,
         y: highShot ? boss.y + 12 : boss.y + 44,
-        w: 44, h: 18, vx: -4.5,
+        w: 44, h: 18, vx: (boss.enraged ? -5.4 : -4.5) * diff.enemySpeedMult,
         label: highShot ? 'REUNIÓN 5:55' : '¡URGENTE!'
       });
     }
@@ -2136,7 +2230,7 @@
           gameState = 'VICTORY';
           showModal(
             '🏠 ¡LLEGASTE A CASA A TIEMPO!',
-            'Completaste los 4 mundos de DinoCorp v4.2 Deluxe, derrotaste al Gerente de las 5:55 PM y ya estás descansando en casa.',
+            'Completaste los 4 mundos de DinoCorp v4.3 Deluxe, derrotaste al Gerente de las 5:55 PM y ya estás descansando en casa.',
             'JUGAR NUEVA CAMPAÑA',
             () => buildLevel(true, true),
             true
@@ -2472,12 +2566,16 @@
   }
 
   function drawBoss() {
-    if (boss.shielded) {
+    if (boss.enraged) {
+      ctx.strokeStyle = Math.floor(performance.now() / 110) % 2 === 0 ? 'rgba(249, 115, 22, 0.95)' : 'rgba(239, 68, 68, 0.95)';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(boss.x - 9, boss.y - 9, boss.w + 18, boss.h + 18);
+    } else if (boss.shielded) {
       ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
       ctx.lineWidth = 3;
       ctx.strokeRect(boss.x - 6, boss.y - 6, boss.w + 12, boss.h + 12);
     }
-    ctx.fillStyle = '#1e1b4b';
+    ctx.fillStyle = boss.enraged ? '#450a0a' : '#1e1b4b';
     ctx.fillRect(boss.x, boss.y + 18, boss.w, boss.h - 18);
     ctx.fillStyle = '#fca5a5';
     ctx.fillRect(boss.x + 10, boss.y, boss.w - 20, 24);
@@ -2498,9 +2596,9 @@
       ctx.fillStyle = i < boss.hp ? '#ef4444' : '#334155';
       ctx.fillRect(hpX + i * (hpW / boss.maxHp) + 1, hpY, (hpW / boss.maxHp) - 2, 6);
     }
-    ctx.fillStyle = '#fef2f2';
+    ctx.fillStyle = boss.enraged ? '#fdba74' : '#fef2f2';
     ctx.font = 'bold 9px sans-serif';
-    ctx.fillText('GERENTE 5:55 PM', hpX - 4, hpY - 4);
+    ctx.fillText(boss.enraged ? '🔥 GERENTE 5:58 PM' : 'GERENTE 5:55 PM', hpX - 4, hpY - 4);
 
     for (const pr of boss.projectiles) {
       ctx.fillStyle = '#dc2626';
@@ -2659,10 +2757,38 @@
   const overlayModal = document.getElementById('overlay-modal');
   const modalTitle = document.getElementById('modal-title');
   const modalDesc = document.getElementById('modal-desc');
+  const modalDifficulty = document.getElementById('modal-difficulty');
   const modalControls = document.getElementById('modal-controls');
   const modalStats = document.getElementById('modal-stats');
   const btnModalShare = document.getElementById('btn-modal-share');
   const btnModalAction = document.getElementById('btn-modal-action');
+
+  function renderDifficultyPicker() {
+    modalDifficulty.innerHTML = `
+      <div class="controls-guide-title" style="text-align:center;">Dificultad de la Jornada</div>
+      <div class="diff-row">
+        ${Object.keys(DIFFICULTIES).map(k => {
+          const d = DIFFICULTIES[k];
+          return `<button type="button" class="diff-btn ${k === selectedDiff ? 'active' : ''}" data-diff="${k}">${d.emoji} ${d.label}</button>`;
+        }).join('')}
+      </div>
+      <div class="diff-meta" id="modalDiffMeta">${getDiff().meta}</div>
+    `;
+    modalDifficulty.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-diff');
+        if (!DIFFICULTIES[key]) return;
+        selectedDiff = key;
+        try { localStorage.setItem(DIFF_KEY, key); } catch (e) {}
+        modalDifficulty.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-diff') === key));
+        const meta = document.getElementById('modalDiffMeta');
+        if (meta) meta.textContent = DIFFICULTIES[key].meta;
+        buildLevel(true, true);
+        draw();
+        gameState = 'PAUSED';
+      });
+    });
+  }
 
   const DINO_CONTROLS_HTML = `
     <div class="controls-guide-title">Comandos del Juego</div>
@@ -2690,9 +2816,9 @@
     c.fillStyle = 'rgba(15, 23, 42, 0.94)'; c.fillRect(60, 60, 1080, 508);
 
     c.fillStyle = '#4ade80'; c.font = 'bold 42px Inter, sans-serif';
-    c.fillText('DINOCORP v4.2: ¡SALIDA A TIEMPO!', 100, 145);
+    c.fillText('DINOCORP v4.3: ¡SALIDA A TIEMPO!', 100, 145);
     c.fillStyle = '#94a3b8'; c.font = '24px Inter, sans-serif';
-    c.fillText('Misión Completada · Arcade Hub (ramses-cn.github.io/Linkedin)', 100, 195);
+    c.fillText(`Misión Completada · Modo ${getDiff().label} · Arcade Hub`, 100, 195);
 
     c.fillStyle = '#1e293b'; c.fillRect(100, 235, 680, 235);
     c.strokeStyle = '#334155'; c.lineWidth = 2; c.strokeRect(100, 235, 680, 235);
@@ -2725,13 +2851,19 @@
 
   let modalIsPause = false;
 
-  function showModal(title, desc, btnText, callback, showShare = false, isPause = false, showControls = false, hideStats = false) {
+  function showModal(title, desc, btnText, callback, showShare = false, isPause = false, showControls = false, hideStats = false, showDifficulty = false) {
     clearInputs();
     saveRecords(score, currentLevelIdx, foldersCollectedInLevel);
     gameState = 'PAUSED';
     modalIsPause = isPause;
     modalTitle.textContent = title;
     modalDesc.textContent = desc;
+    if (showDifficulty) {
+      renderDifficultyPicker();
+      modalDifficulty.style.display = 'block';
+    } else {
+      modalDifficulty.style.display = 'none';
+    }
     if (showControls) {
       modalControls.innerHTML = DINO_CONTROLS_HTML;
       modalControls.style.display = 'block';
@@ -2815,9 +2947,10 @@
       '🦖 DINOCORP: SALIDA A TIEMPO',
       'Supera los 4 sectores corporativos y llega a casa antes de las 6:00 PM.',
       '▶ INICIAR JORNADA',
-      () => { initAudio(); },
+      () => { initAudio(); buildLevel(true, true); },
       false,
       false,
+      true,
       true,
       true
     );
