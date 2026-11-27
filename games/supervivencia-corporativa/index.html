@@ -115,18 +115,18 @@
             50% { transform: scale(1.04); opacity: 0.86; }
         }
 
-        /* Floating Dash action button (for touch & mouse quick access) */
+        /* Floating Dash action button (bottom-center so left/right touch joysticks & radar stay clear) */
         .dash-fab {
-            position: absolute; left: 16px; bottom: 18px; z-index: 6;
+            position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6;
             pointer-events: auto;
             display: inline-flex; align-items: center; gap: 6px;
             background: rgba(14, 165, 233, 0.9); color: #020617;
             border: 2px solid #7dd3fc; border-radius: 999px;
-            padding: 10px 16px; font-size: 12px; font-weight: 900;
+            padding: 10px 18px; font-size: 12px; font-weight: 900;
             cursor: pointer; box-shadow: 0 6px 18px rgba(14, 165, 233, 0.35);
             transition: transform 0.1s, opacity 0.15s;
         }
-        .dash-fab:active { transform: scale(0.93); }
+        .dash-fab:active { transform: translateX(-50%) scale(0.93); }
         .dash-fab.cooldown { opacity: 0.55; background: rgba(30, 41, 59, 0.85); color: #94a3b8; border-color: #475569; }
 
         /* Modals */
@@ -240,10 +240,34 @@
         .back-link:hover { color: #0f172a; }
 
         @media (max-width: 640px) {
-            .hud { padding: 8px 10px; }
-            .hud-level, .hud-kills { font-size: 16px; }
+            .hud { padding: 6px 8px; gap: 6px; }
+            .hud-card { padding: 4px 8px; gap: 6px; }
+            .hud-level, .hud-kills { font-size: 15px; }
+            .hud-weapon { font-size: 11px; max-width: 115px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .controls-grid, .upgrades-grid { grid-template-columns: 1fr; }
-            .dash-fab { left: 10px; bottom: 12px; padding: 8px 12px; font-size: 11px; }
+            .dash-fab { bottom: 12px; padding: 8px 14px; font-size: 11px; }
+        }
+        @media (max-width: 460px) {
+            .hud-btn { padding: 5px 8px; font-size: 11px; }
+            .bar-hp { height: 18px; }
+            .bar-dash { height: 13px; max-width: 150px; }
+        }
+        @media (max-height: 480px) {
+            .overlay { padding: 8px; }
+            .modal { padding: 12px 16px; border-radius: 16px; }
+            .hero-emblem { display: none; }
+            .modal h1 { font-size: 20px; margin-bottom: 4px; }
+            .modal-sub { font-size: 11px; margin-bottom: 8px; line-height: 1.35; }
+            .controls-box { padding: 8px 10px; margin-bottom: 8px; }
+            .controls-box h3 { margin-bottom: 6px; font-size: 10px; }
+            .controls-grid { grid-template-columns: 1fr 1fr; font-size: 10.5px; gap: 8px; }
+            .controls-grid ul { gap: 3px; }
+            .upgrades-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .upgrade-card { padding: 10px 8px; }
+            .upgrade-icon { font-size: 26px; margin-bottom: 4px; }
+            .btn-primary { padding: 9px 14px; font-size: 13px; }
+            .back-link { margin-top: 6px; font-size: 12px; }
+            .dash-fab { bottom: 10px; padding: 7px 12px; font-size: 11px; }
         }
     </style>
 </head>
@@ -1262,7 +1286,7 @@
         }
 
         function drawRadar() {
-            const size = canvas.width < 560 ? 104 : 136;
+            const size = (canvas.width < 460 || canvas.height < 430) ? 86 : (canvas.width < 680 ? 104 : 136);
             const pad = 14;
             const rx = canvas.width - size - pad;
             const ry = canvas.height - size - pad;

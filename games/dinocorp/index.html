@@ -418,6 +418,40 @@
       resize: none;
       margin-bottom: 10px;
     }
+
+    /* Adaptación multi-dispositivo: móviles pequeños, tablet y horizontal corto */
+    @media (max-width: 720px) {
+      #top-bar { padding: 4px 6px; gap: 4px; }
+      .brand-group { gap: 5px; width: 100%; justify-content: space-between; }
+      .brand-title { font-size: 12px; }
+      .level-selector { overflow-x: auto; max-width: 100%; flex-wrap: nowrap; scrollbar-width: none; }
+      .level-selector::-webkit-scrollbar { display: none; }
+      .btn-lvl { white-space: nowrap; padding: 3px 6px; font-size: 10.5px; }
+      .top-actions { width: 100%; justify-content: flex-end; }
+      #btn-debug, #btn-sim-mobile, #btn-sites { display: none; }
+    }
+
+    @media (max-width: 430px) {
+      .touch-cluster { gap: 6px; }
+      .touch-btn { width: 50px; height: 50px; font-size: 15px; }
+      .touch-btn.btn-dash { width: 48px; height: 48px; }
+      .touch-btn.btn-stamp { width: 50px; height: 50px; }
+      .touch-btn.btn-jump { width: 56px; height: 56px; }
+    }
+
+    @media (max-height: 480px) {
+      #top-bar { min-height: 36px; padding: 2px 8px; }
+      #btn-debug, #btn-sim-mobile, #btn-sites { display: none; }
+      .modal-card { padding: 12px 14px; }
+      .modal-card h2 { font-size: 16px; margin-bottom: 4px; }
+      .modal-card p { font-size: 11.5px; margin-bottom: 8px; }
+      .stats-grid { padding: 6px 10px; margin-bottom: 8px; font-size: 11px; }
+      .btn-primary { padding: 8px 14px; font-size: 12px; }
+      .touch-btn { width: 48px; height: 48px; font-size: 14px; }
+      .touch-btn.btn-dash { width: 46px; height: 46px; }
+      .touch-btn.btn-stamp { width: 48px; height: 48px; }
+      .touch-btn.btn-jump { width: 54px; height: 54px; }
+    }
   </style>
 </head>
 <body>
@@ -518,6 +552,7 @@
     canvas.style.height = `${Math.floor(dh)}px`;
   }
   window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', () => setTimeout(fitCanvas, 150));
   if (window.ResizeObserver) new ResizeObserver(fitCanvas).observe(stageContainer);
 
   // Auto-detección de pantalla táctil
